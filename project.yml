@@ -1,0 +1,44 @@
+name: Blabber
+options:
+  bundleIdPrefix: com.mmichon
+  deploymentTarget:
+    iOS: "17.0"
+  xcodeVersion: "16.0"
+  createIntermediateGroups: true
+
+targets:
+  Blabber:
+    type: application
+    platform: iOS
+    sources:
+      - path: Blabber
+    info:
+      path: Blabber/Info.plist
+      properties:
+        CFBundleDisplayName: Blabber
+        CFBundleShortVersionString: "1.0"
+        CFBundleVersion: "1"
+        UILaunchScreen:
+          UIColorName: ""
+        UISupportedInterfaceOrientations:
+          - UIInterfaceOrientationPortrait
+          - UIInterfaceOrientationLandscapeLeft
+          - UIInterfaceOrientationLandscapeRight
+        NSMicrophoneUsageDescription: "Blabber needs the microphone to capture your car conversations."
+        NSLocationWhenInUseUsageDescription: "Blabber names each recording with where you were."
+        UIBackgroundModes:
+          - audio
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.mmichon.blabber
+        SWIFT_VERSION: "5.9"
+        IPHONEOS_DEPLOYMENT_TARGET: "17.0"
+        CODE_SIGN_STYLE: Automatic
+        DEVELOPMENT_TEAM: 3T83K465T6
+        TARGETED_DEVICE_FAMILY: "1,2"
+        ENABLE_BITCODE: NO
+        DEBUG_INFORMATION_FORMAT: dwarf-with-dsym
+        SWIFT_STRICT_CONCURRENCY: minimal
+        SUPPORTED_PLATFORMS: "iphoneos iphonesimulator"
+        SDKROOT: iphoneos
+        ONLY_ACTIVE_ARCH: YES

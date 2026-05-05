@@ -1,0 +1,19 @@
+# Xcode
+xcuserdata/
+*.xcuserdatad/
+DerivedData/
+build/
+*.ipa
+*.xcarchive
+*.pbxuser
+*.mode1v3
+*.mode2v3
+*.perspectivev3
+
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+
+# Claude Code
+.claude/settings.local.json

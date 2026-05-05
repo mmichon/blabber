@@ -1,0 +1,411 @@
+// !$*UTF8*$!
+{
+	archiveVersion = 1;
+	classes = {
+	};
+	objectVersion = 77;
+	objects = {
+
+/* Begin PBXBuildFile section */
+		1610E383489462114F2E6914 /* RecordingsListView.swift in Sources */ = {isa = PBXBuildFile; fileRef = D2B14A1529555CE87D57D72B /* RecordingsListView.swift */; };
+		3BD11881E80367D25DAAD756 /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2D457159A98CDF275EB90764 /* ContentView.swift */; };
+		43436889C772501E5F846C6D /* LocationService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 560A15FCB737F5DF69ABEC22 /* LocationService.swift */; };
+		4622B63870D036BB5666B8EB /* RecorderViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 96169F40CA36D8A124DDAFC7 /* RecorderViewModel.swift */; };
+		5507792B3335B38C31CE3343 /* MeshBackground.swift in Sources */ = {isa = PBXBuildFile; fileRef = 698BA54A81F64592F504D067 /* MeshBackground.swift */; };
+		566304E04DFC5D08D032D7A1 /* WaveformView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7FA72F2B84D7290E1283521C /* WaveformView.swift */; };
+		76E56001E09FDA3789AFD3AB /* RecordingState.swift in Sources */ = {isa = PBXBuildFile; fileRef = B485C0043E0353DAA0288BC6 /* RecordingState.swift */; };
+		7AD05CA2867DD9D76987E840 /* PlayerViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 66E4F9B5EC67268856FE7851 /* PlayerViewModel.swift */; };
+		87936C387CCDF5A664452C88 /* AudioService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 305CF3231F7364E82517C859 /* AudioService.swift */; };
+		997DCC50B8BAEED17041E62B /* Recording.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3DC0C9459EC56E72BA34440F /* Recording.swift */; };
+		B9CD70530EED6FFA62024F82 /* PlayerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4BB826915BC380F4681DDF41 /* PlayerView.swift */; };
+		BC86A00E3BD68FE66CD28A19 /* RecordView.swift in Sources */ = {isa = PBXBuildFile; fileRef = C3AFD01E4B0B5714F38EC9D5 /* RecordView.swift */; };
+		C1E3336E8BBA33B390FC2360 /* BlabberApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3C659C61F91D03DC0761F4EC /* BlabberApp.swift */; };
+		E57A033BA0CED7B23D4BC15E /* StorageService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 585325E57C586A21788FBCE7 /* StorageService.swift */; };
+		E678EB9C8F7C4B8FC39D14F9 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = FBAFACABC96D406F107FF69C /* Assets.xcassets */; };
+/* End PBXBuildFile section */
+
+/* Begin PBXFileReference section */
+		2D457159A98CDF275EB90764 /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
+		305CF3231F7364E82517C859 /* AudioService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AudioService.swift; sourceTree = "<group>"; };
+		3C659C61F91D03DC0761F4EC /* BlabberApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BlabberApp.swift; sourceTree = "<group>"; };
+		3DC0C9459EC56E72BA34440F /* Recording.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Recording.swift; sourceTree = "<group>"; };
+		4BB826915BC380F4681DDF41 /* PlayerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlayerView.swift; sourceTree = "<group>"; };
+		560A15FCB737F5DF69ABEC22 /* LocationService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LocationService.swift; sourceTree = "<group>"; };
+		585325E57C586A21788FBCE7 /* StorageService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StorageService.swift; sourceTree = "<group>"; };
+		66E4F9B5EC67268856FE7851 /* PlayerViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlayerViewModel.swift; sourceTree = "<group>"; };
+		698BA54A81F64592F504D067 /* MeshBackground.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MeshBackground.swift; sourceTree = "<group>"; };
+		7FA72F2B84D7290E1283521C /* WaveformView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WaveformView.swift; sourceTree = "<group>"; };
+		96169F40CA36D8A124DDAFC7 /* RecorderViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RecorderViewModel.swift; sourceTree = "<group>"; };
+		B485C0043E0353DAA0288BC6 /* RecordingState.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RecordingState.swift; sourceTree = "<group>"; };
+		BE4FF3C58571D1B662671A89 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
+		C1768475B36B69DCF3EE3D1B /* Blabber.app */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.application; path = Blabber.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		C3AFD01E4B0B5714F38EC9D5 /* RecordView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RecordView.swift; sourceTree = "<group>"; };
+		D2B14A1529555CE87D57D72B /* RecordingsListView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RecordingsListView.swift; sourceTree = "<group>"; };
+		FBAFACABC96D406F107FF69C /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
+/* End PBXFileReference section */
+
+/* Begin PBXGroup section */
+		30CD2F6FC1BD75F0DC8B13C2 /* Models */ = {
+			isa = PBXGroup;
+			children = (
+				3DC0C9459EC56E72BA34440F /* Recording.swift */,
+				B485C0043E0353DAA0288BC6 /* RecordingState.swift */,
+			);
+			path = Models;
+			sourceTree = "<group>";
+		};
+		3B47A396535D9AF4C0AE5AD8 /* ViewModels */ = {
+			isa = PBXGroup;
+			children = (
+				66E4F9B5EC67268856FE7851 /* PlayerViewModel.swift */,
+				96169F40CA36D8A124DDAFC7 /* RecorderViewModel.swift */,
+			);
+			path = ViewModels;
+			sourceTree = "<group>";
+		};
+		51929842465292C108E4C7A0 = {
+			isa = PBXGroup;
+			children = (
+				B8404BD5DCA4DB378692BE32 /* Blabber */,
+				F0CBE951B029E88622B56DB3 /* Products */,
+			);
+			sourceTree = "<group>";
+		};
+		7D9B8CEBC3099DD8C1AFA986 /* Services */ = {
+			isa = PBXGroup;
+			children = (
+				305CF3231F7364E82517C859 /* AudioService.swift */,
+				560A15FCB737F5DF69ABEC22 /* LocationService.swift */,
+				585325E57C586A21788FBCE7 /* StorageService.swift */,
+			);
+			path = Services;
+			sourceTree = "<group>";
+		};
+		8E1731B74E95D38E7A4B5F7B /* App */ = {
+			isa = PBXGroup;
+			children = (
+				3C659C61F91D03DC0761F4EC /* BlabberApp.swift */,
+			);
+			path = App;
+			sourceTree = "<group>";
+		};
+		B8404BD5DCA4DB378692BE32 /* Blabber */ = {
+			isa = PBXGroup;
+			children = (
+				FBAFACABC96D406F107FF69C /* Assets.xcassets */,
+				BE4FF3C58571D1B662671A89 /* Info.plist */,
+				8E1731B74E95D38E7A4B5F7B /* App */,
+				30CD2F6FC1BD75F0DC8B13C2 /* Models */,
+				7D9B8CEBC3099DD8C1AFA986 /* Services */,
+				3B47A396535D9AF4C0AE5AD8 /* ViewModels */,
+				FAAEC14B7899AD7C266ECA67 /* Views */,
+			);
+			path = Blabber;
+			sourceTree = "<group>";
+		};
+		F0CBE951B029E88622B56DB3 /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				C1768475B36B69DCF3EE3D1B /* Blabber.app */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+		FAAEC14B7899AD7C266ECA67 /* Views */ = {
+			isa = PBXGroup;
+			children = (
+				2D457159A98CDF275EB90764 /* ContentView.swift */,
+				698BA54A81F64592F504D067 /* MeshBackground.swift */,
+				4BB826915BC380F4681DDF41 /* PlayerView.swift */,
+				D2B14A1529555CE87D57D72B /* RecordingsListView.swift */,
+				C3AFD01E4B0B5714F38EC9D5 /* RecordView.swift */,
+				7FA72F2B84D7290E1283521C /* WaveformView.swift */,
+			);
+			path = Views;
+			sourceTree = "<group>";
+		};
+/* End PBXGroup section */
+
+/* Begin PBXNativeTarget section */
+		D7DE9A3712E541773FBF4DA5 /* Blabber */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 13AF99196C582A7F504FD65D /* Build configuration list for PBXNativeTarget "Blabber" */;
+			buildPhases = (
+				C6F77C924A7AF288E4A7225F /* Sources */,
+				CC9ACCDFF043F0824C38FD18 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = Blabber;
+			packageProductDependencies = (
+			);
+			productName = Blabber;
+			productReference = C1768475B36B69DCF3EE3D1B /* Blabber.app */;
+			productType = "com.apple.product-type.application";
+		};
+/* End PBXNativeTarget section */
+
+/* Begin PBXProject section */
+		FC7DD011CA9FA9CBDE226A3C /* Project object */ = {
+			isa = PBXProject;
+			attributes = {
+				BuildIndependentTargetsInParallel = YES;
+				LastUpgradeCheck = 1600;
+				TargetAttributes = {
+					D7DE9A3712E541773FBF4DA5 = {
+						DevelopmentTeam = 3T83K465T6;
+						ProvisioningStyle = Automatic;
+					};
+				};
+			};
+			buildConfigurationList = A02BBB72C7A3A1FA809B9D05 /* Build configuration list for PBXProject "Blabber" */;
+			developmentRegion = en;
+			hasScannedForEncodings = 0;
+			knownRegions = (
+				Base,
+				en,
+			);
+			mainGroup = 51929842465292C108E4C7A0;
+			minimizedProjectReferenceProxies = 1;
+			preferredProjectObjectVersion = 77;
+			productRefGroup = F0CBE951B029E88622B56DB3 /* Products */;
+			projectDirPath = "";
+			projectRoot = "";
+			targets = (
+				D7DE9A3712E541773FBF4DA5 /* Blabber */,
+			);
+		};
+/* End PBXProject section */
+
+/* Begin PBXResourcesBuildPhase section */
+		CC9ACCDFF043F0824C38FD18 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				E678EB9C8F7C4B8FC39D14F9 /* Assets.xcassets in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXResourcesBuildPhase section */
+
+/* Begin PBXSourcesBuildPhase section */
+		C6F77C924A7AF288E4A7225F /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				87936C387CCDF5A664452C88 /* AudioService.swift in Sources */,
+				C1E3336E8BBA33B390FC2360 /* BlabberApp.swift in Sources */,
+				3BD11881E80367D25DAAD756 /* ContentView.swift in Sources */,
+				43436889C772501E5F846C6D /* LocationService.swift in Sources */,
+				5507792B3335B38C31CE3343 /* MeshBackground.swift in Sources */,
+				B9CD70530EED6FFA62024F82 /* PlayerView.swift in Sources */,
+				7AD05CA2867DD9D76987E840 /* PlayerViewModel.swift in Sources */,
+				BC86A00E3BD68FE66CD28A19 /* RecordView.swift in Sources */,
+				4622B63870D036BB5666B8EB /* RecorderViewModel.swift in Sources */,
+				997DCC50B8BAEED17041E62B /* Recording.swift in Sources */,
+				76E56001E09FDA3789AFD3AB /* RecordingState.swift in Sources */,
+				1610E383489462114F2E6914 /* RecordingsListView.swift in Sources */,
+				E57A033BA0CED7B23D4BC15E /* StorageService.swift in Sources */,
+				566304E04DFC5D08D032D7A1 /* WaveformView.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXSourcesBuildPhase section */
+
+/* Begin XCBuildConfiguration section */
+		1A243722112CFCB4DFF99B91 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++14";
+				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = dwarf;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_TESTABILITY = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu11;
+				GCC_DYNAMIC_NO_PIC = NO;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"$(inherited)",
+					"DEBUG=1",
+				);
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
+				MTL_FAST_MATH = YES;
+				ONLY_ACTIVE_ARCH = YES;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = iphoneos;
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = DEBUG;
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+				SWIFT_VERSION = 5.0;
+			};
+			name = Debug;
+		};
+		BFAA992B5FC56EEF9D7574D5 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CODE_SIGN_IDENTITY = "iPhone Developer";
+				CODE_SIGN_STYLE = Automatic;
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				DEVELOPMENT_TEAM = 3T83K465T6;
+				ENABLE_BITCODE = NO;
+				INFOPLIST_FILE = Blabber/Info.plist;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				ONLY_ACTIVE_ARCH = YES;
+				PRODUCT_BUNDLE_IDENTIFIER = com.mmichon.blabber;
+				SDKROOT = iphoneos;
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
+				SWIFT_STRICT_CONCURRENCY = minimal;
+				SWIFT_VERSION = 5.9;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Release;
+		};
+		C7D4ADECA0A4CF0C0A328707 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CODE_SIGN_IDENTITY = "iPhone Developer";
+				CODE_SIGN_STYLE = Automatic;
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				DEVELOPMENT_TEAM = 3T83K465T6;
+				ENABLE_BITCODE = NO;
+				INFOPLIST_FILE = Blabber/Info.plist;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				ONLY_ACTIVE_ARCH = YES;
+				PRODUCT_BUNDLE_IDENTIFIER = com.mmichon.blabber;
+				SDKROOT = iphoneos;
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
+				SWIFT_STRICT_CONCURRENCY = minimal;
+				SWIFT_VERSION = 5.9;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Debug;
+		};
+		CD76E625F6F2278390E4869B /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++14";
+				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				ENABLE_NS_ASSERTIONS = NO;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu11;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				MTL_ENABLE_DEBUG_INFO = NO;
+				MTL_FAST_MATH = YES;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = iphoneos;
+				SWIFT_COMPILATION_MODE = wholemodule;
+				SWIFT_OPTIMIZATION_LEVEL = "-O";
+				SWIFT_VERSION = 5.0;
+			};
+			name = Release;
+		};
+/* End XCBuildConfiguration section */
+
+/* Begin XCConfigurationList section */
+		13AF99196C582A7F504FD65D /* Build configuration list for PBXNativeTarget "Blabber" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				C7D4ADECA0A4CF0C0A328707 /* Debug */,
+				BFAA992B5FC56EEF9D7574D5 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+		A02BBB72C7A3A1FA809B9D05 /* Build configuration list for PBXProject "Blabber" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				1A243722112CFCB4DFF99B91 /* Debug */,
+				CD76E625F6F2278390E4869B /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+/* End XCConfigurationList section */
+	};
+	rootObject = FC7DD011CA9FA9CBDE226A3C /* Project object */;
+}

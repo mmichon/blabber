@@ -1,0 +1,112 @@
+import SwiftUI
+
+struct RecordingsListView: View {
+    @State private var recordings: [Recording] = []
+    @State private var selectedRecording: Recording?
+
+    private let storage = StorageService.shared
+
+    var body: some View {
+        NavigationStack {
+            ZStack {
+                MeshBackground()
+
+                if recordings.isEmpty {
+                    emptyState
+                } else {
+                    List {
+                        ForEach(recordings) { recording in
+                            RecordingRow(recording: recording)
+                                .listRowBackground(Color.white.opacity(0.06))
+                                .listRowSeparatorTint(Color.white.opacity(0.08))
+                                .onTapGesture { selectedRecording = recording }
+                        }
+                        .onDelete { indexSet in
+                            for i in indexSet { storage.deleteRecording(recordings[i]) }
+                            recordings.remove(atOffsets: indexSet)
+                        }
+                    }
+                    .listStyle(.plain)
+                    .scrollContentBackground(.hidden)
+                }
+            }
+            .navigationTitle("Recordings")
+            .navigationBarTitleDisplayMode(.large)
+            .toolbarColorScheme(.dark, for: .navigationBar)
+            .onAppear { recordings = storage.loadRecordings() }
+            .sheet(item: $selectedRecording) { recording in
+                PlayerView(recording: recording)
+                    .presentationDetents([.large])
+                    .presentationDragIndicator(.visible)
+            }
+        }
+        .preferredColorScheme(.dark)
+    }
+
+    private var emptyState: some View {
+        VStack(spacing: 14) {
+            Image(systemName: "waveform.circle")
+                .font(.system(size: 68))
+                .foregroundStyle(
+                    LinearGradient(colors: [Color.blue.opacity(0.6), Color.purple.opacity(0.4)],
+                                   startPoint: .topLeading, endPoint: .bottomTrailing)
+                )
+            Text("No recordings yet")
+                .font(.system(size: 20, weight: .semibold))
+                .foregroundColor(.white.opacity(0.5))
+            Text("Tap Record and start a conversation")
+                .font(.system(size: 14))
+                .foregroundColor(.white.opacity(0.3))
+        }
+        .padding()
+        .glassCard(cornerRadius: 24)
+        .padding(.horizontal, 40)
+    }
+}
+
+struct RecordingRow: View {
+    let recording: Recording
+
+    var body: some View {
+        HStack(spacing: 14) {
+            ZStack {
+                Circle()
+                    .fill(LinearGradient(
+                        colors: [Color.blue.opacity(0.5), Color.purple.opacity(0.3)],
+                        startPoint: .topLeading, endPoint: .bottomTrailing))
+                    .frame(width: 44, height: 44)
+                Image(systemName: "waveform")
+                    .font(.system(size: 18, weight: .semibold))
+                    .foregroundColor(.white)
+            }
+
+            VStack(alignment: .leading, spacing: 4) {
+                Text(recording.title)
+                    .font(.system(size: 16, weight: .semibold))
+                    .foregroundColor(.white)
+                    .lineLimit(1)
+
+                HStack(spacing: 6) {
+                    Text(recording.date.formatted(date: .abbreviated, time: .shortened))
+                    Text("·")
+                    Text(durationString)
+                }
+                .font(.system(size: 12))
+                .foregroundColor(.white.opacity(0.45))
+            }
+
+            Spacer()
+
+            Image(systemName: "chevron.right")
+                .font(.system(size: 12, weight: .semibold))
+                .foregroundColor(.white.opacity(0.25))
+        }
+        .padding(.vertical, 8)
+    }
+
+    private var durationString: String {
+        let mins = Int(recording.duration) / 60
+        let secs = Int(recording.duration) % 60
+        return mins > 0 ? "\(mins)m \(secs)s" : "\(secs)s"
+    }
+}
