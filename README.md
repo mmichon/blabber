@@ -1,5 +1,7 @@
 # Blabber
 
+<img src="screenshots/simulator.png" width="250" align="right" />
+
 An iOS app for recording car conversations. Blabber listens continuously but only captures speech — silence is automatically skipped. Each session is named after the location where it was recorded.
 
 ## Features
@@ -26,6 +28,3 @@ An iOS app for recording car conversations. Blabber listens continuously but onl
 
 > Note: Code signing requires an active Xcode account session; building from the CLI (`xcodebuild`) won't work for device deployment.
 
-## Screenshots
-
-![Blabber record screen](screenshots/simulator.png)
