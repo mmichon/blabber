@@ -1,4 +1,26 @@
+import AVFoundation
+import AVKit
 import SwiftUI
+
+private struct VideoPlayerLayerView: UIViewRepresentable {
+    let player: AVPlayer
+
+    func makeUIView(context: Context) -> _PlayerUIView {
+        let view = _PlayerUIView()
+        view.playerLayer.player = player
+        view.playerLayer.videoGravity = .resizeAspect
+        return view
+    }
+
+    func updateUIView(_ uiView: _PlayerUIView, context: Context) {
+        uiView.playerLayer.player = player
+    }
+
+    class _PlayerUIView: UIView {
+        override class var layerClass: AnyClass { AVPlayerLayer.self }
+        var playerLayer: AVPlayerLayer { layer as! AVPlayerLayer }
+    }
+}
 
 struct PlayerView: View {
     let recording: Recording
@@ -47,12 +69,15 @@ struct PlayerView: View {
             Spacer()
 
             waveformDecor
+                .frame(maxHeight: geo.size.height * 0.38)
+                .padding(.vertical, 16)
 
-            Spacer()
-
+            Spacer(minLength: 0)
+        }
+        .safeAreaInset(edge: .bottom, spacing: 0) {
             controlsSection
                 .padding(.horizontal, 28)
-                .padding(.bottom, geo.safeAreaInsets.bottom + 40)
+                .padding(.bottom, 24)
         }
     }
 
@@ -99,17 +124,24 @@ struct PlayerView: View {
         }
     }
 
+    @ViewBuilder
     private var waveformDecor: some View {
-        Image(systemName: "waveform")
-            .font(.system(size: 80, weight: .ultraLight))
-            .foregroundStyle(
-                LinearGradient(
-                    colors: [Color.blue.opacity(vm.isPlaying ? 0.55 : 0.15),
-                             Color.purple.opacity(vm.isPlaying ? 0.40 : 0.10)],
-                    startPoint: .topLeading, endPoint: .bottomTrailing
+        if vm.hasVideo, let player = vm.player {
+            VideoPlayerLayerView(player: player)
+                .aspectRatio(9/16, contentMode: .fit)
+                .clipShape(RoundedRectangle(cornerRadius: 12))
+        } else {
+            Image(systemName: "waveform")
+                .font(.system(size: 80, weight: .ultraLight))
+                .foregroundStyle(
+                    LinearGradient(
+                        colors: [Color.blue.opacity(vm.isPlaying ? 0.55 : 0.15),
+                                 Color.purple.opacity(vm.isPlaying ? 0.40 : 0.10)],
+                        startPoint: .topLeading, endPoint: .bottomTrailing
+                    )
                 )
-            )
-            .animation(.easeInOut(duration: 0.5), value: vm.isPlaying)
+                .animation(.easeInOut(duration: 0.5), value: vm.isPlaying)
+        }
     }
 
     private var controlsSection: some View {

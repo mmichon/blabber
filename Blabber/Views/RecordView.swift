@@ -2,6 +2,7 @@ import SwiftUI
 
 struct RecordView: View {
     @StateObject private var vm = RecorderViewModel()
+    @ObservedObject private var videoService = VideoService.shared
     @Environment(\.horizontalSizeClass) private var hSizeClass
     @State private var showCancelConfirm = false
 
@@ -14,6 +15,10 @@ struct RecordView: View {
                     landscapeLayout(geo: geo)
                 } else {
                     portraitLayout(geo: geo)
+                }
+
+                if vm.isActive && videoService.cameraAuthorized {
+                    cameraPreviewPip(geo: geo)
                 }
             }
         }
@@ -40,27 +45,26 @@ struct RecordView: View {
             headerView
                 .padding(.top, geo.safeAreaInsets.top + 16)
 
-            Spacer()
-
-            WaveformView(
-                level: vm.audioLevel,
-                isActive: vm.state == .listening || vm.state == .detecting || vm.state == .speaking,
-                state: vm.state
-            )
-
-            Spacer()
-
-            sensitivityRow
-                .padding(.horizontal, 28)
+            VStack(spacing: 28) {
+                WaveformView(
+                    level: vm.audioLevel,
+                    isActive: vm.state == .listening || vm.state == .detecting || vm.state == .speaking,
+                    state: vm.state
+                )
+                sensitivityRow
+                    .padding(.horizontal, 28)
+            }
+            .padding(.top, 36)
 
             Spacer()
 
-            statusLabel
-
-            djButtonRow
-                .padding(.horizontal, 28)
-                .padding(.top, 24)
-                .padding(.bottom, geo.safeAreaInsets.bottom + 36)
+            VStack(spacing: 0) {
+                statusLabel
+                djButtonRow
+                    .padding(.horizontal, 28)
+                    .padding(.top, 24)
+                    .padding(.bottom, geo.safeAreaInsets.bottom + 36)
+            }
         }
     }
 
@@ -98,6 +102,27 @@ struct RecordView: View {
             .padding(.trailing, geo.safeAreaInsets.trailing + 28)
         }
         .padding(.vertical, 16)
+    }
+
+    // MARK: - Camera Preview PiP
+
+    @ViewBuilder
+    private func cameraPreviewPip(geo: GeometryProxy) -> some View {
+        let isLandscape = geo.size.width > geo.size.height
+        VStack {
+            HStack {
+                Spacer()
+                CameraPreviewView(session: videoService.captureSession)
+                    .frame(width: 72, height: 96)
+                    .clipShape(RoundedRectangle(cornerRadius: 10))
+                    .overlay(RoundedRectangle(cornerRadius: 10)
+                        .stroke(Color.white.opacity(0.18), lineWidth: 1))
+                    .shadow(color: .black.opacity(0.4), radius: 8, x: 0, y: 4)
+            }
+            .padding(.top, geo.safeAreaInsets.top + (isLandscape ? 10 : 6))
+            .padding(.trailing, (isLandscape ? geo.safeAreaInsets.trailing : 0) + 16)
+            Spacer()
+        }
     }
 
     // MARK: - Sub-views

@@ -24,6 +24,7 @@ targets:
           - UIInterfaceOrientationPortrait
           - UIInterfaceOrientationLandscapeLeft
           - UIInterfaceOrientationLandscapeRight
+        NSCameraUsageDescription: "Blabber records video of conversations alongside audio."
         NSMicrophoneUsageDescription: "Blabber needs the microphone to capture your car conversations."
         NSLocationWhenInUseUsageDescription: "Blabber names each recording with where you were."
         UIBackgroundModes:
