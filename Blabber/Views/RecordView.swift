@@ -131,13 +131,12 @@ struct RecordView: View {
     // MARK: - Sub-views
 
     private var headerView: some View {
-        VStack(spacing: 6) {
-            Text("Blabber")
-                .font(.system(size: 34, weight: .heavy, design: .rounded))
-                .foregroundStyle(
-                    LinearGradient(colors: [.white, Color(white: 0.75)],
-                                   startPoint: .top, endPoint: .bottom)
-                )
+        VStack(spacing: 8) {
+            Image("AppLogo")
+                .resizable()
+                .scaledToFit()
+                .frame(width: 72, height: 72)
+                .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
 
             if vm.isActive {
                 HStack(spacing: 8) {
