@@ -15,12 +15,11 @@ struct RecordView: View {
 
                 if geo.size.width > geo.size.height {
                     landscapeLayout(geo: geo)
+                    if vm.isActive && videoService.cameraAuthorized {
+                        cameraPreviewPip(geo: geo)
+                    }
                 } else {
                     portraitLayout(geo: geo)
-                }
-
-                if vm.isActive && videoService.cameraAuthorized {
-                    cameraPreviewPip(geo: geo)
                 }
             }
         }
@@ -131,12 +130,29 @@ struct RecordView: View {
     // MARK: - Sub-views
 
     private var headerView: some View {
-        VStack(spacing: 8) {
-            Image("AppLogo")
-                .resizable()
-                .scaledToFit()
-                .frame(width: 72, height: 72)
-                .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
+        let iconSize: CGFloat = 100
+        let showCamera = vm.isActive && videoService.cameraAuthorized
+
+        return VStack(spacing: 10) {
+            ZStack {
+                Image("AppLogo")
+                    .resizable()
+                    .scaledToFill()
+                    .frame(width: iconSize, height: iconSize)
+
+                if showCamera {
+                    CameraPreviewView(session: videoService.captureSession)
+                        .frame(width: iconSize, height: iconSize)
+                        .transition(.opacity)
+                }
+            }
+            .frame(width: iconSize, height: iconSize)
+            .clipShape(RoundedRectangle(cornerRadius: iconSize * 0.2232, style: .continuous))
+            .overlay(
+                RoundedRectangle(cornerRadius: iconSize * 0.2232, style: .continuous)
+                    .stroke(Color.white.opacity(showCamera ? 0.22 : 0), lineWidth: 1)
+            )
+            .animation(.easeInOut(duration: 0.3), value: showCamera)
 
             if vm.isActive {
                 HStack(spacing: 8) {
