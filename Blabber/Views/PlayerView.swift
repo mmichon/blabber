@@ -1,5 +1,26 @@
+import AVFoundation
 import AVKit
 import SwiftUI
+
+private struct VideoPlayerLayerView: UIViewRepresentable {
+    let player: AVPlayer
+
+    func makeUIView(context: Context) -> _PlayerUIView {
+        let view = _PlayerUIView()
+        view.playerLayer.player = player
+        view.playerLayer.videoGravity = .resizeAspect
+        return view
+    }
+
+    func updateUIView(_ uiView: _PlayerUIView, context: Context) {
+        uiView.playerLayer.player = player
+    }
+
+    class _PlayerUIView: UIView {
+        override class var layerClass: AnyClass { AVPlayerLayer.self }
+        var playerLayer: AVPlayerLayer { layer as! AVPlayerLayer }
+    }
+}
 
 struct PlayerView: View {
     let recording: Recording
@@ -106,10 +127,9 @@ struct PlayerView: View {
     @ViewBuilder
     private var waveformDecor: some View {
         if vm.hasVideo, let player = vm.player {
-            VideoPlayer(player: player)
+            VideoPlayerLayerView(player: player)
                 .aspectRatio(9/16, contentMode: .fit)
                 .clipShape(RoundedRectangle(cornerRadius: 12))
-                .allowsHitTesting(false) // controls come from our custom UI
         } else {
             Image(systemName: "waveform")
                 .font(.system(size: 80, weight: .ultraLight))
