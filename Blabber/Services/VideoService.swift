@@ -23,6 +23,14 @@ final class VideoService: NSObject, ObservableObject {
     private nonisolated(unsafe) var videoRecordingStartDate: Date?
     private var recordingFinishedContinuation: CheckedContinuation<URL?, Never>?
 
+    // Tracks whether didStartRecordingTo has fired for the in-flight recording.
+    // Cleared at startRecording, set true in the start delegate. Used by the finish
+    // delegate to distinguish "started then stopped" from "rejected at start".
+    private nonisolated(unsafe) var didStartRecordingFired = false
+    private nonisolated(unsafe) var currentRecordingURL: URL?
+    private nonisolated(unsafe) var startRecordingRetryCount = 0
+    private static let maxStartRecordingRetries = 2
+
     private override init() { super.init() }
 
     // MARK: - Authorization
@@ -76,6 +84,17 @@ final class VideoService: NSObject, ObservableObject {
         }
         captureSession.addOutput(output)
         captureSession.commitConfiguration()
+
+        // Observers must be installed before startRunning so we don't miss an early
+        // wasInterruptedNotification (e.g. another client owning the camera at app launch).
+        let nc = NotificationCenter.default
+        nc.addObserver(self, selector: #selector(handleSessionWasInterrupted(_:)),
+                       name: AVCaptureSession.wasInterruptedNotification, object: captureSession)
+        nc.addObserver(self, selector: #selector(handleSessionInterruptionEnded(_:)),
+                       name: AVCaptureSession.interruptionEndedNotification, object: captureSession)
+        nc.addObserver(self, selector: #selector(handleSessionRuntimeError(_:)),
+                       name: AVCaptureSession.runtimeErrorNotification, object: captureSession)
+
         captureSession.startRunning()
 
         // Disable audio track — audio comes from AVAudioEngine with voice processing.
@@ -116,6 +135,32 @@ final class VideoService: NSObject, ObservableObject {
                 appendLog("[VideoService] startSession: output already recording, skipped")
                 return
             }
+            // AVCaptureSession can stop running due to system interruptions
+            // (FaceID, audio session conflicts, brief backgrounding, another client
+            // grabbing the camera). startRecording on a stopped session fails
+            // immediately with "Cannot Record" and no didStartRecordingTo callback.
+            if !self.captureSession.isRunning {
+                appendLog("[VideoService] startSession: session not running, restarting")
+                self.captureSession.startRunning()
+                appendLog("[VideoService] startSession: session restart returned, isRunning=\(self.captureSession.isRunning)")
+            }
+            // Even with isRunning=true the session may be mid-interruption — startRecording
+            // will then fail with "Cannot Record" and no didStartRecordingTo. Brief poll for
+            // the interruption to clear before recording.
+            var waited = 0.0
+            while self.captureSession.isInterrupted, waited < 1.0 {
+                Thread.sleep(forTimeInterval: 0.05)
+                waited += 0.05
+            }
+            let audio = AVAudioSession.sharedInstance()
+            appendLog("[VideoService] startSession: pre-record state isRunning=\(self.captureSession.isRunning) isInterrupted=\(self.captureSession.isInterrupted) waitedForInterruption=\(waited)s audioCat=\(audio.category.rawValue) audioMode=\(audio.mode.rawValue) audioRoute=\(AudioService.routeSummary())")
+            guard self.captureSession.isRunning, !self.captureSession.isInterrupted else {
+                appendLog("[VideoService] startSession: aborting — session not in a recordable state")
+                return
+            }
+            self.didStartRecordingFired = false
+            self.currentRecordingURL = tempURL
+            self.startRecordingRetryCount = 0
             output.startRecording(to: tempURL, recordingDelegate: self)
         }
     }
@@ -156,6 +201,47 @@ final class VideoService: NSObject, ObservableObject {
             guard let self, let output = self.movieOutput, output.isRecording else { return }
             output.stopRecording()
             // didFinishRecordingTo will fire but recordingFinishedContinuation is nil — no-op.
+        }
+    }
+
+    // MARK: - Session Interruption Handling
+
+    @objc private nonisolated func handleSessionWasInterrupted(_ notification: Notification) {
+        let reasonRaw = (notification.userInfo?[AVCaptureSessionInterruptionReasonKey] as? Int) ?? -1
+        let reasonName: String
+        switch AVCaptureSession.InterruptionReason(rawValue: reasonRaw) {
+        case .videoDeviceNotAvailableInBackground: reasonName = "notAvailableInBackground"
+        case .audioDeviceInUseByAnotherClient:    reasonName = "audioDeviceInUseByAnotherClient"
+        case .videoDeviceInUseByAnotherClient:    reasonName = "videoDeviceInUseByAnotherClient"
+        case .videoDeviceNotAvailableWithMultipleForegroundApps: reasonName = "notAvailableWithMultipleForegroundApps"
+        case .videoDeviceNotAvailableDueToSystemPressure: reasonName = "notAvailableDueToSystemPressure"
+        case .sensitiveContentMitigationActivated: reasonName = "sensitiveContentMitigationActivated"
+        default: reasonName = "unknown(\(reasonRaw))"
+        }
+        appendLog("[VideoService] session wasInterrupted reason=\(reasonName)")
+    }
+
+    @objc private nonisolated func handleSessionInterruptionEnded(_ notification: Notification) {
+        appendLog("[VideoService] session interruptionEnded — restarting if needed")
+        sessionQueue.async { [weak self] in
+            guard let self else { return }
+            if !self.captureSession.isRunning {
+                self.captureSession.startRunning()
+                appendLog("[VideoService] interruptionEnded: restart returned, isRunning=\(self.captureSession.isRunning)")
+            }
+        }
+    }
+
+    @objc private nonisolated func handleSessionRuntimeError(_ notification: Notification) {
+        let err = notification.userInfo?[AVCaptureSessionErrorKey] as? Error
+        appendLog("[VideoService] session runtimeError: \(err?.localizedDescription ?? "<no error>")")
+        // Try once to recover. AVError code .mediaServicesWereReset is the typical recoverable case.
+        sessionQueue.async { [weak self] in
+            guard let self else { return }
+            if !self.captureSession.isRunning {
+                self.captureSession.startRunning()
+                appendLog("[VideoService] runtimeError: restart returned, isRunning=\(self.captureSession.isRunning)")
+            }
         }
     }
 
@@ -327,6 +413,7 @@ extension VideoService: AVCaptureFileOutputRecordingDelegate {
                                 didStartRecordingTo fileURL: URL,
                                 from connections: [AVCaptureConnection]) {
         videoRecordingStartDate = Date()
+        didStartRecordingFired = true
         appendLog("[VideoService] didStartRecordingTo: \(fileURL.lastPathComponent), videoRecordingStartDate set")
     }
 
@@ -336,13 +423,53 @@ extension VideoService: AVCaptureFileOutputRecordingDelegate {
                                 error: Error?) {
         // AVFoundation fires this delegate with AVErrorRecordingSuccessfullyFinished even on
         // a clean stop — it's not a real error. Only treat it as failure for other error codes.
-        let successfullyFinished = (error as NSError?)?.userInfo[AVErrorRecordingSuccessfullyFinishedKey] as? Bool ?? false
+        let nsError = error as NSError?
+        let successfullyFinished = nsError?.userInfo[AVErrorRecordingSuccessfullyFinishedKey] as? Bool ?? false
         let isSuccess = error == nil || successfullyFinished
-        appendLog("[VideoService] didFinishRecordingTo: \(outputFileURL.lastPathComponent), error: \(error?.localizedDescription ?? "none"), isSuccess: \(isSuccess)")
+        let errCodeStr = nsError.map { "domain=\($0.domain) code=\($0.code)" } ?? "no-error"
+        appendLog("[VideoService] didFinishRecordingTo: \(outputFileURL.lastPathComponent), error: \(error?.localizedDescription ?? "none") [\(errCodeStr)], isSuccess: \(isSuccess), didStartFired=\(didStartRecordingFired)")
         appendLog("[VideoService] output file exists: \(FileManager.default.fileExists(atPath: outputFileURL.path))")
+
+        // "Cannot Record" without ever firing didStartRecordingTo means the output rejected
+        // the start. AVCaptureMovieFileOutput state seems to recover on its own after this
+        // failed completion — retrying immediately on the same output works in practice.
+        let rejectedAtStart = !isSuccess && !didStartRecordingFired
+        if rejectedAtStart, let movieOut = movieOutput, let originalURL = currentRecordingURL,
+           startRecordingRetryCount < Self.maxStartRecordingRetries {
+            startRecordingRetryCount += 1
+            let attempt = startRecordingRetryCount
+            appendLog("[VideoService] retrying startRecording (attempt \(attempt)/\(Self.maxStartRecordingRetries)) for \(originalURL.lastPathComponent)")
+            sessionQueue.asyncAfter(deadline: .now() + 0.15) { [weak self] in
+                guard let self else { return }
+                guard !movieOut.isRecording else {
+                    appendLog("[VideoService] retry: output already recording, skipping retry")
+                    return
+                }
+                guard self.captureSession.isRunning, !self.captureSession.isInterrupted else {
+                    appendLog("[VideoService] retry: session not recordable, giving up")
+                    Task { @MainActor [weak self] in
+                        guard let self else { return }
+                        recordingFinishedContinuation?.resume(returning: nil)
+                        recordingFinishedContinuation = nil
+                    }
+                    return
+                }
+                self.didStartRecordingFired = false
+                movieOut.startRecording(to: originalURL, recordingDelegate: self)
+            }
+            return
+        }
+
         Task { @MainActor [weak self] in
             guard let self else { return }
-            // recordingFinishedContinuation is nil after cancelSession() — safe no-op.
+            // If no one is awaiting the result (e.g., RecorderViewModel cancelled the
+            // session because audio was too short), the file is orphaned. Delete it so
+            // temp files don't accumulate in the app's Documents directory.
+            if recordingFinishedContinuation == nil,
+               FileManager.default.fileExists(atPath: outputFileURL.path) {
+                try? FileManager.default.removeItem(at: outputFileURL)
+                appendLog("[VideoService] removed orphan temp video \(outputFileURL.lastPathComponent)")
+            }
             recordingFinishedContinuation?.resume(returning: isSuccess ? outputFileURL : nil)
             recordingFinishedContinuation = nil
         }
