@@ -5,6 +5,8 @@ struct RecordView: View {
     @ObservedObject private var videoService = VideoService.shared
     @Environment(\.horizontalSizeClass) private var hSizeClass
     @State private var showCancelConfirm = false
+    @State private var sessionStart: Date? = nil
+    @State private var outerRingPulse = false
 
     var body: some View {
         GeometryReader { geo in
@@ -23,6 +25,9 @@ struct RecordView: View {
             }
         }
         .preferredColorScheme(.dark)
+        .onChange(of: vm.isActive) { _, active in
+            sessionStart = active ? .now : nil
+        }
         .alert("Error", isPresented: Binding(
             get: { vm.errorMessage != nil },
             set: { if !$0 { vm.errorMessage = nil } }
@@ -45,24 +50,25 @@ struct RecordView: View {
             headerView
                 .padding(.top, geo.safeAreaInsets.top + 16)
 
-            VStack(spacing: 28) {
-                WaveformView(
-                    level: vm.audioLevel,
-                    isActive: vm.state == .listening || vm.state == .detecting || vm.state == .speaking,
-                    state: vm.state
-                )
-                sensitivityRow
-                    .padding(.horizontal, 28)
-            }
-            .padding(.top, 36)
+            WaveformView(
+                level: vm.audioLevel,
+                isActive: vm.state == .listening || vm.state == .detecting || vm.state == .speaking,
+                state: vm.state
+            )
+            .padding(.top, 20)
 
-            Spacer()
+            Spacer(minLength: 0)
 
             VStack(spacing: 0) {
+                sensitivityRow
+                    .padding(.horizontal, 28)
+
                 statusLabel
+                    .padding(.top, 20)
+
                 djButtonRow
                     .padding(.horizontal, 28)
-                    .padding(.top, 24)
+                    .padding(.top, 28)
                     .padding(.bottom, geo.safeAreaInsets.bottom + 36)
             }
         }
@@ -73,7 +79,6 @@ struct RecordView: View {
     @ViewBuilder
     private func landscapeLayout(geo: GeometryProxy) -> some View {
         HStack(spacing: 0) {
-            // Left: header + sensitivity + status
             VStack(spacing: 12) {
                 headerView
                 Spacer()
@@ -85,7 +90,6 @@ struct RecordView: View {
             .frame(maxWidth: geo.size.width * 0.38)
             .padding(.leading, geo.safeAreaInsets.leading + 24)
 
-            // Center: waveform
             WaveformView(
                 level: vm.audioLevel,
                 isActive: vm.state == .listening || vm.state == .detecting || vm.state == .speaking,
@@ -93,7 +97,6 @@ struct RecordView: View {
             )
             .frame(maxWidth: .infinity)
 
-            // Right: buttons stacked vertically
             VStack(spacing: 20) {
                 Spacer()
                 djButtonColumn
@@ -128,76 +131,94 @@ struct RecordView: View {
     // MARK: - Sub-views
 
     private var headerView: some View {
-        VStack(spacing: 5) {
+        VStack(spacing: 6) {
             Text("Blabber")
                 .font(.system(size: 34, weight: .heavy, design: .rounded))
                 .foregroundStyle(
-                    LinearGradient(colors: [.white, Color(white: 0.78)],
+                    LinearGradient(colors: [.white, Color(white: 0.75)],
                                    startPoint: .top, endPoint: .bottom)
                 )
+
             if vm.isActive {
-                Text(vm.sessionTitle)
-                    .font(.system(size: 14, weight: .medium))
-                    .foregroundColor(.white.opacity(0.6))
-                    .lineLimit(1)
-                    .transition(.opacity.combined(with: .move(edge: .top)))
+                HStack(spacing: 8) {
+                    RecDot()
+                    TimelineView(.periodic(from: sessionStart ?? .now, by: 1)) { tl in
+                        let elapsed = sessionStart.map { Int(tl.date.timeIntervalSince($0)) } ?? 0
+                        Text(formatElapsed(elapsed))
+                            .font(.system(size: 13, weight: .semibold, design: .monospaced))
+                            .foregroundColor(.white.opacity(0.8))
+                    }
+                }
+                .transition(.opacity.combined(with: .move(edge: .top)))
             }
         }
         .animation(.easeInOut(duration: 0.3), value: vm.isActive)
     }
 
     private var statusLabel: some View {
-        Text(vm.statusText)
-            .font(.system(size: 14, weight: .semibold))
-            .foregroundColor(statusColor)
-            .padding(.horizontal, 16)
-            .padding(.vertical, 7)
-            .glassCard(cornerRadius: 12)
-            .animation(.easeInOut, value: vm.state)
+        HStack(spacing: 6) {
+            Circle()
+                .fill(statusColor)
+                .frame(width: 6, height: 6)
+                .shadow(color: statusColor.opacity(0.8), radius: 4)
+
+            Text(vm.statusText)
+                .font(.system(size: 13, weight: .semibold))
+                .foregroundColor(statusColor)
+        }
+        .padding(.horizontal, 18)
+        .padding(.vertical, 8)
+        .glassCard(cornerRadius: 20)
+        .animation(.easeInOut, value: vm.state)
     }
 
     private var sensitivityRow: some View {
-        let normalizedThreshold = Double((vm.sensitivityThreshold + 60) / 60)
-        let normalizedLevel = Double(vm.audioLevel)
+        let normalizedThreshold = CGFloat((vm.sensitivityThreshold + 60) / 60)
+        let normalizedLevel = CGFloat(vm.audioLevel)
         let aboveThreshold = normalizedLevel > normalizedThreshold
 
-        return VStack(spacing: 6) {
-            HStack {
-                Text("Sensitivity")
-                    .font(.system(size: 12, weight: .semibold))
-                    .foregroundColor(.white.opacity(0.6))
+        return VStack(spacing: 10) {
+            HStack(alignment: .lastTextBaseline) {
+                Text("Mic Sensitivity")
+                    .font(.system(size: 11, weight: .medium))
+                    .foregroundColor(.white.opacity(0.45))
                 Spacer()
                 Text("\(Int(vm.sensitivityThreshold)) dB")
-                    .font(.system(size: 12, weight: .medium, design: .monospaced))
-                    .foregroundColor(.white.opacity(0.8))
+                    .font(.system(size: 11, design: .monospaced))
+                    .foregroundColor(.white.opacity(0.55))
             }
 
+            // Level meter + threshold marker overlaid on the slider track
             GeometryReader { g in
                 ZStack(alignment: .leading) {
-                    RoundedRectangle(cornerRadius: 3)
-                        .fill(Color.white.opacity(0.12))
-                        .frame(height: 5)
+                    // Track background
+                    Capsule()
+                        .fill(Color.white.opacity(0.07))
+                        .frame(height: 4)
+                        .frame(maxWidth: .infinity)
+                        .offset(y: 16) // align with slider track center
 
-                    RoundedRectangle(cornerRadius: 3)
-                        .fill(aboveThreshold ? Color.green : Color.blue)
-                        .frame(width: g.size.width * normalizedLevel, height: 5)
+                    // Live level fill
+                    Capsule()
+                        .fill(aboveThreshold ? Color.green.opacity(0.55) : Color.white.opacity(0.18))
+                        .frame(width: g.size.width * normalizedLevel, height: 4)
+                        .offset(y: 16)
                         .animation(.easeOut(duration: 0.05), value: normalizedLevel)
 
-                    Rectangle()
-                        .fill(Color.white)
-                        .frame(width: 2, height: 11)
-                        .offset(x: g.size.width * normalizedThreshold - 1)
-                }
-                .frame(height: 11)
-            }
-            .frame(height: 11)
+                    // Threshold tick mark
+                    RoundedRectangle(cornerRadius: 1)
+                        .fill(Color.white.opacity(0.9))
+                        .frame(width: 2, height: 18)
+                        .offset(x: g.size.width * normalizedThreshold - 1, y: 7)
 
-            Slider(value: $vm.sensitivityThreshold, in: -60 ... -20, step: 1)
-                .tint(.white.opacity(0.7))
+                    Slider(value: $vm.sensitivityThreshold, in: -60 ... -20, step: 1)
+                        .tint(.clear)
+                }
+            }
+            .frame(height: 32)
         }
     }
 
-    // Horizontal row for portrait
     private var djButtonRow: some View {
         HStack(spacing: 0) {
             cancelButton.frame(maxWidth: .infinity)
@@ -206,7 +227,6 @@ struct RecordView: View {
         }
     }
 
-    // Vertical column for landscape
     private var djButtonColumn: some View {
         VStack(spacing: 16) {
             cancelButton
@@ -228,14 +248,16 @@ struct RecordView: View {
     }
 
     private var startPauseButton: some View {
-        Button {
+        let isIdle = vm.state == .idle
+        let icon: String = isIdle ? "record.circle.fill" : vm.startPauseIcon
+        let bg: Color = isIdle ? Color.red.opacity(0.82) : Color.white.opacity(0.12)
+        let glow: Color = isIdle ? .red : .clear
+
+        return Button {
             if vm.state == .idle { vm.startSession() }
             else { vm.togglePause() }
         } label: {
-            djButton(icon: vm.startPauseIcon, size: 92,
-                     foreground: .white,
-                     background: Color.blue.opacity(0.80),
-                     glowColor: .blue)
+            djButton(icon: icon, size: 92, foreground: .white, background: bg, glowColor: glow)
         }
         .buttonStyle(PressScaleStyle())
     }
@@ -253,35 +275,88 @@ struct RecordView: View {
     @ViewBuilder
     private func djButton(icon: String, size: CGFloat,
                           foreground: Color, background: Color,
-                          glowColor: Color? = nil) -> some View {
+                          glowColor: Color? = nil,
+                          glowRadius: CGFloat = 22,
+                          glowOpacity: Double = 0.55) -> some View {
         ZStack {
+            // Outer accent ring (large buttons only)
             if size >= 88 {
                 Circle()
-                    .stroke(Color.white.opacity(0.10), lineWidth: 2)
-                    .frame(width: size + 14, height: size + 14)
+                    .stroke(
+                        AngularGradient(
+                            colors: [.white.opacity(0.18), .clear, .white.opacity(0.08), .clear],
+                            center: .center
+                        ),
+                        lineWidth: 1.5
+                    )
+                    .frame(width: size + 16, height: size + 16)
             }
+
+            // Main circle
             Circle()
                 .fill(background)
                 .frame(width: size, height: size)
-                .overlay(Circle().stroke(Color.white.opacity(0.14), lineWidth: 1))
+                .overlay(
+                    Circle()
+                        .stroke(
+                            LinearGradient(
+                                colors: [Color.white.opacity(0.22), Color.white.opacity(0.05)],
+                                startPoint: .topLeading,
+                                endPoint: .bottomTrailing
+                            ),
+                            lineWidth: 1
+                        )
+                )
 
             Image(systemName: icon)
                 .font(.system(size: size * 0.33, weight: .bold))
                 .foregroundColor(foreground)
                 .offset(x: icon == "play.fill" ? 3 : 0)
         }
-        .shadow(color: (glowColor ?? .clear).opacity(glowColor != nil ? 0.6 : 0),
-                radius: 24, x: 0, y: 6)
+        .shadow(
+            color: (glowColor ?? .clear).opacity(glowColor != nil ? glowOpacity : 0),
+            radius: glowRadius, x: 0, y: 4
+        )
     }
+
+    // MARK: - Helpers
 
     private var statusColor: Color {
         switch vm.state {
-        case .idle:       return .white.opacity(0.45)
-        case .listening:  return .blue
+        case .idle:       return .white.opacity(0.4)
+        case .listening:  return Color(red: 0.3, green: 0.6, blue: 1.0)
         case .detecting:  return .orange
         case .speaking:   return .green
         case .paused:     return .yellow
         }
+    }
+
+    private func formatElapsed(_ seconds: Int) -> String {
+        let s = seconds % 60
+        let m = (seconds / 60) % 60
+        let h = seconds / 3600
+        return h > 0
+            ? String(format: "%d:%02d:%02d", h, m, s)
+            : String(format: "%d:%02d", m, s)
+    }
+}
+
+// MARK: - Supporting views
+
+private struct RecDot: View {
+    @State private var visible = true
+
+    var body: some View {
+        Circle()
+            .fill(Color.red)
+            .frame(width: 7, height: 7)
+            .shadow(color: .red.opacity(0.7), radius: 4)
+            .opacity(visible ? 1 : 0.2)
+            .onAppear {
+                withAnimation(.easeInOut(duration: 0.7).repeatForever(autoreverses: true)) {
+                    visible = false
+                }
+            }
     }
 }
 

@@ -5,42 +5,43 @@ struct WaveformView: View {
     var isActive: Bool
     var state: RecordingState
 
-    @State private var pulseScale: CGFloat = 1.0
-    @State private var barHeights: [CGFloat] = Array(repeating: 4, count: 20)
+    @State private var barHeights: [CGFloat] = Array(repeating: 3, count: 50)
+    @State private var idlePhase: Double = 0
     @State private var idleTimer: Timer?
 
-    private let barCount = 20
+    private let barCount = 50
+    private let maxBarHeight: CGFloat = 52
+    private let barWidth: CGFloat = 3
 
     var body: some View {
-        ZStack {
-            ForEach(0..<3, id: \.self) { i in
+        GeometryReader { geo in
+            ZStack {
+                // Single subtle ring — just enough to indicate state
                 Circle()
-                    .stroke(ringColor(for: i), lineWidth: 1.5)
-                    .frame(width: 160 + CGFloat(i) * 28,
-                           height: 160 + CGFloat(i) * 28)
-                    .scaleEffect(pulseScale)
-                    .opacity(isActive ? (0.6 - Double(i) * 0.15) : 0.08)
-                    .animation(
-                        .easeInOut(duration: 1.4)
-                            .repeatForever(autoreverses: true)
-                            .delay(Double(i) * 0.25),
-                        value: pulseScale
+                    .stroke(barColor.opacity(isActive ? 0.18 : 0.06), lineWidth: 1)
+                    .frame(
+                        width: min(geo.size.width, geo.size.height) * 0.62,
+                        height: min(geo.size.width, geo.size.height) * 0.62
                     )
-            }
 
-            HStack(spacing: 3) {
-                ForEach(0..<barCount, id: \.self) { i in
-                    RoundedRectangle(cornerRadius: 2)
-                        .fill(barColor)
-                        .frame(width: 3, height: barHeights[i])
-                        .animation(.easeInOut(duration: 0.08), value: barHeights[i])
+                // Mirrored waveform
+                VStack(spacing: 0) {
+                    waveformBars(geo: geo, flipped: true)
+                        .frame(height: maxBarHeight)
+
+                    Rectangle()
+                        .fill(barColor.opacity(0.2))
+                        .frame(height: 1)
+
+                    waveformBars(geo: geo, flipped: false)
+                        .frame(height: maxBarHeight)
                 }
+                .padding(.horizontal, 24)
+                .opacity(isActive ? 1.0 : 0.3)
             }
-            .frame(width: 100, height: 60)
-            .opacity(isActive ? 1.0 : 0.2)
+            .frame(width: geo.size.width, height: geo.size.height)
         }
         .onAppear {
-            pulseScale = 1.1
             startIdleBreathing()
         }
         .onDisappear {
@@ -48,14 +49,44 @@ struct WaveformView: View {
             idleTimer = nil
         }
         .onChange(of: level) { _, newLevel in
-            if isActive {
-                updateBars(level: newLevel)
-            }
+            if isActive { updateBars(level: newLevel) }
         }
         .onChange(of: isActive) { _, active in
-            if !active {
-                resetBars()
+            if !active { resetBars() }
+        }
+    }
+
+    // MARK: - Bar helpers
+
+    @ViewBuilder
+    private func waveformBars(geo: GeometryProxy, flipped: Bool) -> some View {
+        let padding: CGFloat = 48
+        let available = geo.size.width - padding
+        let spacing = max(1.5, (available - CGFloat(barCount) * barWidth) / CGFloat(barCount - 1))
+
+        HStack(spacing: spacing) {
+            ForEach(0..<barCount, id: \.self) { i in
+                VStack(spacing: 0) {
+                    if !flipped { Spacer(minLength: 0) }
+                    RoundedRectangle(cornerRadius: 1.5)
+                        .fill(barGradient(flipped: flipped))
+                        .frame(width: barWidth, height: barHeights[i])
+                        .animation(.easeOut(duration: 0.07), value: barHeights[i])
+                    if flipped { Spacer(minLength: 0) }
+                }
+                .frame(height: maxBarHeight)
             }
+        }
+    }
+
+    private func barGradient(flipped: Bool) -> LinearGradient {
+        // Both halves fade to transparent at the far edge (away from center)
+        if flipped {
+            LinearGradient(colors: [barColor, barColor.opacity(0.06)],
+                           startPoint: .bottom, endPoint: .top)
+        } else {
+            LinearGradient(colors: [barColor.opacity(0.06), barColor],
+                           startPoint: .bottom, endPoint: .top)
         }
     }
 
@@ -63,43 +94,41 @@ struct WaveformView: View {
         switch state {
         case .speaking:   return .green
         case .detecting:  return .orange
-        case .listening:  return .blue
+        case .listening:  return Color(red: 0.3, green: 0.6, blue: 1.0)
         case .paused:     return .yellow
-        case .idle:       return Color.white.opacity(0.25)
+        case .idle:       return .white
         }
     }
 
-    private func ringColor(for index: Int) -> Color {
-        switch state {
-        case .speaking:   return Color.green.opacity(0.5 - Double(index) * 0.1)
-        case .detecting:  return Color.orange.opacity(0.5 - Double(index) * 0.1)
-        case .listening:  return Color.blue.opacity(0.5 - Double(index) * 0.1)
-        case .paused:     return Color.yellow.opacity(0.4 - Double(index) * 0.1)
-        case .idle:       return Color.white.opacity(0.15 - Double(index) * 0.03)
-        }
-    }
+    // MARK: - Animation
 
     private func updateBars(level: Float) {
-        let centerHeight = CGFloat(level) * 52 + 4
+        let center = Double(barCount) / 2.0
         for i in 0..<barCount {
-            let distance = abs(i - barCount / 2)
-            let factor = 1.0 - Double(distance) / Double(barCount / 2)
-            let noise = CGFloat.random(in: 0.65...1.35)
-            barHeights[i] = max(4, centerHeight * CGFloat(factor) * noise)
+            let dist = abs(Double(i) - center) / center
+            let envelope = pow(1.0 - dist, 1.6)
+            let noise = CGFloat.random(in: 0.45...1.55)
+            barHeights[i] = max(3, CGFloat(level) * maxBarHeight * CGFloat(envelope) * noise)
         }
     }
 
     private func resetBars() {
-        for i in 0..<barCount { barHeights[i] = 4 }
+        withAnimation(.easeOut(duration: 0.3)) {
+            for i in 0..<barCount { barHeights[i] = 3 }
+        }
     }
 
     private func startIdleBreathing() {
-        idleTimer = Timer.scheduledTimer(withTimeInterval: 0.18, repeats: true) { _ in
+        idleTimer = Timer.scheduledTimer(withTimeInterval: 0.08, repeats: true) { _ in
             Task { @MainActor in
-                if !self.isActive {
-                    for i in 0..<self.barCount {
-                        self.barHeights[i] = CGFloat.random(in: 3...8)
-                    }
+                guard !self.isActive else { return }
+                self.idlePhase += 0.04
+                let t = self.idlePhase
+                let breathe = sin(t * 0.28) * 0.2 + 0.5  // gentle, slow
+                for i in 0..<self.barCount {
+                    let x = Double(i) / Double(self.barCount)
+                    let wave = sin(x * .pi * 2.5 + t) * 0.5 + 0.5
+                    self.barHeights[i] = max(3, CGFloat(wave * breathe) * 6 + 3)
                 }
             }
         }
