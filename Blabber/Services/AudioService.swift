@@ -2,6 +2,7 @@ import Foundation
 import AVFoundation
 import Accelerate
 import SoundAnalysis
+import os
 
 struct VADConfiguration {
     var speechThresholdDB: Float = -45.0
@@ -30,6 +31,8 @@ private final class SpeechObserver: NSObject, SNResultsObserving {
 @MainActor
 final class AudioService: NSObject, ObservableObject {
     static let shared = AudioService()
+
+    static let log = Logger(subsystem: "com.mmichon.blabber", category: "audio")
 
     @Published var currentLevel: Float = 0.0
     @Published var state: RecordingState = .idle
@@ -71,14 +74,37 @@ final class AudioService: NSObject, ObservableObject {
     func startSession(outputURL: URL) throws {
         self.outputURL = outputURL
 
-        try configureAudioSession()
-        try setupEngine(outputURL: outputURL)
+        Self.log.notice("startSession begin url=\(outputURL.lastPathComponent, privacy: .public)")
+        dumpAudioState(label: "startSession entry")
+
+        do {
+            try configureAudioSession()
+        } catch {
+            Self.log.error("configureAudioSession threw: \(Self.describe(error), privacy: .public)")
+            dumpAudioState(label: "configureAudioSession failure")
+            throw Self.userFacingError(stage: "configuring audio session", underlying: error)
+        }
+
+        do {
+            try setupEngine(outputURL: outputURL)
+        } catch {
+            Self.log.error("setupEngine threw: \(Self.describe(error), privacy: .public)")
+            dumpAudioState(label: "setupEngine failure")
+            throw Self.userFacingError(stage: "setting up the recorder", underlying: error)
+        }
 
         writtenFrames = 0
         updateThreadState(.listening)
         state = .listening
 
-        try engine.start()
+        do {
+            try engine.start()
+            Self.log.notice("engine.start succeeded")
+        } catch {
+            Self.log.error("engine.start threw: \(Self.describe(error), privacy: .public)")
+            dumpAudioState(label: "engine.start failure")
+            throw Self.userFacingError(stage: "starting the audio engine", underlying: error)
+        }
 
         NotificationCenter.default.addObserver(
             self, selector: #selector(handleInterruption(_:)),
@@ -87,6 +113,10 @@ final class AudioService: NSObject, ObservableObject {
         NotificationCenter.default.addObserver(
             self, selector: #selector(handleRouteChange(_:)),
             name: AVAudioSession.routeChangeNotification, object: nil
+        )
+        NotificationCenter.default.addObserver(
+            self, selector: #selector(handleMediaServicesReset(_:)),
+            name: AVAudioSession.mediaServicesWereResetNotification, object: nil
         )
     }
 
@@ -148,9 +178,42 @@ final class AudioService: NSObject, ObservableObject {
 
     private func configureAudioSession() throws {
         let session = AVAudioSession.sharedInstance()
-        try session.setCategory(.playAndRecord, mode: .voiceChat,
-                                options: [.defaultToSpeaker, .allowBluetoothHFP])
+
+        let carPlay = Self.isCarPlayActive(session: session)
+        Self.log.notice("configureAudioSession carPlay=\(carPlay, privacy: .public) route=\(Self.routeSummary(session: session), privacy: .public)")
+
+        // voiceChat tries to force the route to HFP (mono telephony). When CarPlay owns the
+        // audio route this conflicts and the input node ends up with no valid format,
+        // causing engine.start() to fail with the AVAudioEngine '!dat' error (560226676).
+        // Use .default under CarPlay; keep voiceChat (echo cancellation tuning) otherwise.
+        let mode: AVAudioSession.Mode = carPlay ? .default : .voiceChat
+
+        // .defaultToSpeaker forces output to the iPhone speaker — incompatible with CarPlay
+        // holding the output route. .mixWithOthers keeps the car's music/maps audio playing
+        // when we activate the session.
+        var options: AVAudioSession.CategoryOptions = [.allowBluetoothHFP, .allowBluetoothA2DP, .mixWithOthers]
+        if !carPlay {
+            options.insert(.defaultToSpeaker)
+        }
+
+        Self.log.notice("setCategory playAndRecord mode=\(mode.rawValue, privacy: .public) options=\(options.rawValue)")
+        try session.setCategory(.playAndRecord, mode: mode, options: options)
+
+        // Force the built-in mic. CarPlay sometimes advertises the car's mic as an input,
+        // but the car's mic doesn't always deliver a format compatible with voice processing.
+        if let builtIn = session.availableInputs?.first(where: { $0.portType == .builtInMic }) {
+            do {
+                try session.setPreferredInput(builtIn)
+                Self.log.info("Preferred input set to builtInMic")
+            } catch {
+                Self.log.warning("setPreferredInput failed: \(Self.describe(error), privacy: .public)")
+            }
+        } else {
+            Self.log.warning("No builtInMic in availableInputs=\(session.availableInputs?.map(\.portName) ?? [], privacy: .public)")
+        }
+
         try session.setActive(true)
+        Self.log.notice("Audio session active. sr=\(session.sampleRate) ioBuf=\(session.ioBufferDuration)")
     }
 
     private func teardownAudioSession() {
@@ -163,12 +226,39 @@ final class AudioService: NSObject, ObservableObject {
     private func setupEngine(outputURL: URL) throws {
         inputNode.removeTap(onBus: 0)
 
+        // Wireless CarPlay can return 0ch/0Hz immediately after setActive(true); the route
+        // takes a beat to propagate. Poll briefly so we don't try to toggle VPIO or install
+        // a tap against a not-yet-ready input.
+        let preFmt = waitForUsableInputFormat(timeout: 0.5)
+        Self.log.notice("input format pre-VP: sr=\(preFmt.sampleRate) ch=\(preFmt.channelCount)")
+
         // Voice processing enables AGC, noise suppression, and acoustic echo cancellation.
         // Must be set before installing the tap so the input format reflects the processed signal.
-        try inputNode.setVoiceProcessingEnabled(true)
+        // It can fail when the current route doesn't support it (some CarPlay configurations).
+        // Fall back to plain input rather than aborting the recording.
+        do {
+            try inputNode.setVoiceProcessingEnabled(true)
+            Self.log.info("Voice processing enabled")
+        } catch {
+            Self.log.warning("setVoiceProcessingEnabled(true) failed, continuing without it: \(Self.describe(error), privacy: .public)")
+        }
 
-        let inputFormat = inputNode.outputFormat(forBus: 0)
-        let sampleRate = inputFormat.sampleRate > 0 ? inputFormat.sampleRate : 44100.0
+        // Toggling VPIO rebuilds the input audio unit asynchronously; wait for the new
+        // format to settle before reading it.
+        let inputFormat = waitForUsableInputFormat(timeout: 0.5)
+        Self.log.notice("input format post-VP: sr=\(inputFormat.sampleRate) ch=\(inputFormat.channelCount) vpEnabled=\(self.inputNode.isVoiceProcessingEnabled)")
+
+        // A zero-channel / zero-Hz input format means the route isn't actually delivering
+        // input data. Installing a tap and calling engine.start() on this will fail with
+        // the AVAudioEngine '!dat' error. Refuse with a readable message instead.
+        guard inputFormat.channelCount > 0, inputFormat.sampleRate > 0 else {
+            Self.log.error("Input format invalid (ch=\(inputFormat.channelCount) sr=\(inputFormat.sampleRate)). Aborting.")
+            throw NSError(domain: "Blabber.AudioService", code: 1, userInfo: [
+                NSLocalizedDescriptionKey: "Microphone input isn't available in the current audio route (\(Self.routeSummary())). Try disconnecting CarPlay briefly, or switch the car to Bluetooth-only."
+            ])
+        }
+
+        let sampleRate = inputFormat.sampleRate
         recordingSampleRate = sampleRate
 
         prerollMaxFrames = AVAudioFrameCount(vadConfig.prerollDuration * sampleRate)
@@ -417,11 +507,107 @@ final class AudioService: NSObject, ObservableObject {
               let reason = AVAudioSession.RouteChangeReason(rawValue: reasonValue)
         else { return }
 
+        Self.log.info("routeChange reason=\(reasonValue) route=\(Self.routeSummary(), privacy: .public)")
+
         Task { @MainActor in
             if reason == .oldDeviceUnavailable,
                self.state == .listening || self.state == .detecting || self.state == .speaking {
                 self.pauseSession()
             }
         }
+    }
+
+    @objc private func handleMediaServicesReset(_ notification: Notification) {
+        // The audio server died and was restarted. AVAudioEngine and AVAudioSession are
+        // both invalid. Surface this so we can see it in logs and pause the session.
+        Self.log.error("mediaServicesWereReset received — engine and session are invalid")
+        Task { @MainActor in
+            if self.state != .idle {
+                self.pauseSession()
+                self.errorMessage = "Audio system was reset by iOS. Tap pause/play to restart."
+            }
+        }
+    }
+
+    /// Poll inputNode.outputFormat until channelCount and sampleRate are both non-zero,
+    /// or the timeout fires. Returns the latest format read regardless — the caller decides
+    /// how to handle an invalid format.
+    private func waitForUsableInputFormat(timeout: TimeInterval) -> AVAudioFormat {
+        let deadline = Date().addingTimeInterval(timeout)
+        var fmt = inputNode.outputFormat(forBus: 0)
+        var attempts = 0
+        while (fmt.channelCount == 0 || fmt.sampleRate == 0) && Date() < deadline {
+            attempts += 1
+            Thread.sleep(forTimeInterval: 0.05)
+            fmt = inputNode.outputFormat(forBus: 0)
+        }
+        if attempts > 0 {
+            Self.log.info("waitForUsableInputFormat settled after \(attempts) retries: sr=\(fmt.sampleRate) ch=\(fmt.channelCount)")
+        }
+        return fmt
+    }
+
+    // MARK: - Diagnostics
+
+    /// Decode an Error as "<domain> code <n> ('<fourCharCode>'): <description>".
+    /// CoreAudio errors are positive 32-bit integers whose bytes spell a 4-char tag.
+    nonisolated static func describe(_ error: Error) -> String {
+        let ns = error as NSError
+        let code = ns.code
+        var fcc = ""
+        // Heuristic: printable-ASCII four-char codes typically fall in this range.
+        if code > 0x20000000, code <= 0x7FFFFFFF {
+            var v = UInt32(code)
+            var bytes = [UInt8]()
+            for _ in 0..<4 {
+                bytes.insert(UInt8(v & 0xFF), at: 0)
+                v >>= 8
+            }
+            if bytes.allSatisfy({ (0x20...0x7E).contains($0) }),
+               let s = String(bytes: bytes, encoding: .ascii) {
+                fcc = " ('\(s)')"
+            }
+        }
+        return "\(ns.domain) code \(code)\(fcc): \(ns.localizedDescription)"
+    }
+
+    /// Wrap an underlying error with a human-readable `localizedDescription` so the alert
+    /// shown by `RecorderViewModel` (which uses `error.localizedDescription`) is actionable
+    /// instead of "(com.apple.coreaudio.avfaudio error 560226676.)".
+    nonisolated static func userFacingError(stage: String, underlying: Error) -> NSError {
+        let ns = underlying as NSError
+        let route = routeSummary()
+        let detail = describe(underlying)
+        let hint: String
+        if isCarPlayActive() {
+            hint = " CarPlay is connected (\(route)) — try unplugging CarPlay or switching the car to Bluetooth-only and retry."
+        } else {
+            hint = " Route: \(route)"
+        }
+        let message = "Couldn't start recording (failed while \(stage)). \(detail).\(hint)"
+        return NSError(domain: "Blabber.AudioService", code: ns.code, userInfo: [
+            NSLocalizedDescriptionKey: message,
+            NSUnderlyingErrorKey: underlying
+        ])
+    }
+
+    nonisolated static func isCarPlayActive(session: AVAudioSession = .sharedInstance()) -> Bool {
+        let route = session.currentRoute
+        return route.outputs.contains { $0.portType == .carAudio }
+            || route.inputs.contains { $0.portType == .carAudio }
+    }
+
+    nonisolated static func routeSummary(session: AVAudioSession = .sharedInstance()) -> String {
+        let route = session.currentRoute
+        let outs = route.outputs.map { "\($0.portType.rawValue):\($0.portName)" }.joined(separator: ",")
+        let ins = route.inputs.map { "\($0.portType.rawValue):\($0.portName)" }.joined(separator: ",")
+        return "out=[\(outs)] in=[\(ins)]"
+    }
+
+    private func dumpAudioState(label: String) {
+        let session = AVAudioSession.sharedInstance()
+        Self.log.notice("[\(label, privacy: .public)] cat=\(session.category.rawValue, privacy: .public) mode=\(session.mode.rawValue, privacy: .public) opts=\(session.categoryOptions.rawValue) sr=\(session.sampleRate) ioBuf=\(session.ioBufferDuration) route=\(Self.routeSummary(session: session), privacy: .public) preferredInput=\(session.preferredInput?.portName ?? "<nil>", privacy: .public)")
+        let fmt = inputNode.outputFormat(forBus: 0)
+        Self.log.notice("[\(label, privacy: .public)] inputNode: sr=\(fmt.sampleRate) ch=\(fmt.channelCount) commonFmt=\(fmt.commonFormat.rawValue) vp=\(self.inputNode.isVoiceProcessingEnabled) engineRunning=\(self.engine.isRunning)")
     }
 }
