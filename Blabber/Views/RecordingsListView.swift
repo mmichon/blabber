@@ -16,10 +16,14 @@ struct RecordingsListView: View {
                 } else {
                     List {
                         ForEach(recordings) { recording in
-                            RecordingRow(recording: recording)
+                            RecordingRow(recording: recording,
+                                         isProcessing: recording.isProcessing)
                                 .listRowBackground(Color.white.opacity(0.06))
                                 .listRowSeparatorTint(Color.white.opacity(0.08))
-                                .onTapGesture { selectedRecording = recording }
+                                .onTapGesture {
+                                    guard !recording.isProcessing else { return }
+                                    selectedRecording = recording
+                                }
                         }
                         .onDelete { indexSet in
                             for i in indexSet { storage.deleteRecording(recordings[i]) }
@@ -34,6 +38,9 @@ struct RecordingsListView: View {
             .navigationBarTitleDisplayMode(.large)
             .toolbarColorScheme(.dark, for: .navigationBar)
             .onAppear { recordings = storage.loadRecordings() }
+            .onReceive(NotificationCenter.default.publisher(for: .recordingsDidChange)) { _ in
+                recordings = storage.loadRecordings()
+            }
             .sheet(item: $selectedRecording) { recording in
                 PlayerView(recording: recording)
                     .presentationDetents([.large])
@@ -66,6 +73,7 @@ struct RecordingsListView: View {
 
 struct RecordingRow: View {
     let recording: Recording
+    let isProcessing: Bool
 
     var body: some View {
         HStack(spacing: 14) {
@@ -97,9 +105,21 @@ struct RecordingRow: View {
 
             Spacer()
 
-            Image(systemName: "chevron.right")
-                .font(.system(size: 12, weight: .semibold))
-                .foregroundColor(.white.opacity(0.25))
+            if isProcessing {
+                HStack(spacing: 6) {
+                    ProgressView()
+                        .progressViewStyle(.circular)
+                        .scaleEffect(0.7)
+                        .tint(.white.opacity(0.5))
+                    Text("Processing")
+                        .font(.system(size: 11))
+                        .foregroundColor(.white.opacity(0.4))
+                }
+            } else {
+                Image(systemName: "chevron.right")
+                    .font(.system(size: 12, weight: .semibold))
+                    .foregroundColor(.white.opacity(0.25))
+            }
         }
         .padding(.vertical, 8)
     }

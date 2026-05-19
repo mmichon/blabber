@@ -1,3 +1,4 @@
+import AVKit
 import SwiftUI
 
 struct PlayerView: View {
@@ -47,12 +48,15 @@ struct PlayerView: View {
             Spacer()
 
             waveformDecor
+                .frame(maxHeight: geo.size.height * 0.38)
+                .padding(.vertical, 16)
 
-            Spacer()
-
+            Spacer(minLength: 0)
+        }
+        .safeAreaInset(edge: .bottom, spacing: 0) {
             controlsSection
                 .padding(.horizontal, 28)
-                .padding(.bottom, geo.safeAreaInsets.bottom + 40)
+                .padding(.bottom, 24)
         }
     }
 
@@ -99,17 +103,25 @@ struct PlayerView: View {
         }
     }
 
+    @ViewBuilder
     private var waveformDecor: some View {
-        Image(systemName: "waveform")
-            .font(.system(size: 80, weight: .ultraLight))
-            .foregroundStyle(
-                LinearGradient(
-                    colors: [Color.blue.opacity(vm.isPlaying ? 0.55 : 0.15),
-                             Color.purple.opacity(vm.isPlaying ? 0.40 : 0.10)],
-                    startPoint: .topLeading, endPoint: .bottomTrailing
+        if vm.hasVideo, let player = vm.player {
+            VideoPlayer(player: player)
+                .aspectRatio(9/16, contentMode: .fit)
+                .clipShape(RoundedRectangle(cornerRadius: 12))
+                .allowsHitTesting(false) // controls come from our custom UI
+        } else {
+            Image(systemName: "waveform")
+                .font(.system(size: 80, weight: .ultraLight))
+                .foregroundStyle(
+                    LinearGradient(
+                        colors: [Color.blue.opacity(vm.isPlaying ? 0.55 : 0.15),
+                                 Color.purple.opacity(vm.isPlaying ? 0.40 : 0.10)],
+                        startPoint: .topLeading, endPoint: .bottomTrailing
+                    )
                 )
-            )
-            .animation(.easeInOut(duration: 0.5), value: vm.isPlaying)
+                .animation(.easeInOut(duration: 0.5), value: vm.isPlaying)
+        }
     }
 
     private var controlsSection: some View {

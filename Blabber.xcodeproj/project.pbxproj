@@ -8,6 +8,8 @@
 
 /* Begin PBXBuildFile section */
 		1610E383489462114F2E6914 /* RecordingsListView.swift in Sources */ = {isa = PBXBuildFile; fileRef = D2B14A1529555CE87D57D72B /* RecordingsListView.swift */; };
+		2B8A846E02B186A6394BBA7F /* Notifications.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8058106BD8706B7E40213633 /* Notifications.swift */; };
+		367CDEAE4F534E0158393A94 /* SpeakingSegment.swift in Sources */ = {isa = PBXBuildFile; fileRef = 48616262C4F2F4A10FC53B36 /* SpeakingSegment.swift */; };
 		3BD11881E80367D25DAAD756 /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2D457159A98CDF275EB90764 /* ContentView.swift */; };
 		43436889C772501E5F846C6D /* LocationService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 560A15FCB737F5DF69ABEC22 /* LocationService.swift */; };
 		4622B63870D036BB5666B8EB /* RecorderViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 96169F40CA36D8A124DDAFC7 /* RecorderViewModel.swift */; };
@@ -17,11 +19,14 @@
 		7AD05CA2867DD9D76987E840 /* PlayerViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 66E4F9B5EC67268856FE7851 /* PlayerViewModel.swift */; };
 		87936C387CCDF5A664452C88 /* AudioService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 305CF3231F7364E82517C859 /* AudioService.swift */; };
 		997DCC50B8BAEED17041E62B /* Recording.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3DC0C9459EC56E72BA34440F /* Recording.swift */; };
+		B747A95456B27F4B97CA89A8 /* ProcessingTracker.swift in Sources */ = {isa = PBXBuildFile; fileRef = B1AB8EEA24C352E1E770B738 /* ProcessingTracker.swift */; };
 		B9CD70530EED6FFA62024F82 /* PlayerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4BB826915BC380F4681DDF41 /* PlayerView.swift */; };
 		BC86A00E3BD68FE66CD28A19 /* RecordView.swift in Sources */ = {isa = PBXBuildFile; fileRef = C3AFD01E4B0B5714F38EC9D5 /* RecordView.swift */; };
 		C1E3336E8BBA33B390FC2360 /* BlabberApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3C659C61F91D03DC0761F4EC /* BlabberApp.swift */; };
 		E57A033BA0CED7B23D4BC15E /* StorageService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 585325E57C586A21788FBCE7 /* StorageService.swift */; };
 		E678EB9C8F7C4B8FC39D14F9 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = FBAFACABC96D406F107FF69C /* Assets.xcassets */; };
+		F5A15592B5C90D5D69A279EB /* VideoService.swift in Sources */ = {isa = PBXBuildFile; fileRef = E119AC8E308684A72C263561 /* VideoService.swift */; };
+		F9B5ACCD877E968E90D8D37F /* CameraPreviewView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 81FB03371043B15361873413 /* CameraPreviewView.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -29,18 +34,23 @@
 		305CF3231F7364E82517C859 /* AudioService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AudioService.swift; sourceTree = "<group>"; };
 		3C659C61F91D03DC0761F4EC /* BlabberApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BlabberApp.swift; sourceTree = "<group>"; };
 		3DC0C9459EC56E72BA34440F /* Recording.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Recording.swift; sourceTree = "<group>"; };
+		48616262C4F2F4A10FC53B36 /* SpeakingSegment.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SpeakingSegment.swift; sourceTree = "<group>"; };
 		4BB826915BC380F4681DDF41 /* PlayerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlayerView.swift; sourceTree = "<group>"; };
 		560A15FCB737F5DF69ABEC22 /* LocationService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LocationService.swift; sourceTree = "<group>"; };
 		585325E57C586A21788FBCE7 /* StorageService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StorageService.swift; sourceTree = "<group>"; };
 		66E4F9B5EC67268856FE7851 /* PlayerViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlayerViewModel.swift; sourceTree = "<group>"; };
 		698BA54A81F64592F504D067 /* MeshBackground.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MeshBackground.swift; sourceTree = "<group>"; };
 		7FA72F2B84D7290E1283521C /* WaveformView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WaveformView.swift; sourceTree = "<group>"; };
+		8058106BD8706B7E40213633 /* Notifications.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Notifications.swift; sourceTree = "<group>"; };
+		81FB03371043B15361873413 /* CameraPreviewView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CameraPreviewView.swift; sourceTree = "<group>"; };
 		96169F40CA36D8A124DDAFC7 /* RecorderViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RecorderViewModel.swift; sourceTree = "<group>"; };
+		B1AB8EEA24C352E1E770B738 /* ProcessingTracker.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProcessingTracker.swift; sourceTree = "<group>"; };
 		B485C0043E0353DAA0288BC6 /* RecordingState.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RecordingState.swift; sourceTree = "<group>"; };
 		BE4FF3C58571D1B662671A89 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
-		C1768475B36B69DCF3EE3D1B /* Blabber.app */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.application; path = Blabber.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		C1768475B36B69DCF3EE3D1B /* Blabber.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Blabber.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		C3AFD01E4B0B5714F38EC9D5 /* RecordView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RecordView.swift; sourceTree = "<group>"; };
 		D2B14A1529555CE87D57D72B /* RecordingsListView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RecordingsListView.swift; sourceTree = "<group>"; };
+		E119AC8E308684A72C263561 /* VideoService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VideoService.swift; sourceTree = "<group>"; };
 		FBAFACABC96D406F107FF69C /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
@@ -50,6 +60,7 @@
 			children = (
 				3DC0C9459EC56E72BA34440F /* Recording.swift */,
 				B485C0043E0353DAA0288BC6 /* RecordingState.swift */,
+				48616262C4F2F4A10FC53B36 /* SpeakingSegment.swift */,
 			);
 			path = Models;
 			sourceTree = "<group>";
@@ -76,7 +87,9 @@
 			children = (
 				305CF3231F7364E82517C859 /* AudioService.swift */,
 				560A15FCB737F5DF69ABEC22 /* LocationService.swift */,
+				B1AB8EEA24C352E1E770B738 /* ProcessingTracker.swift */,
 				585325E57C586A21788FBCE7 /* StorageService.swift */,
+				E119AC8E308684A72C263561 /* VideoService.swift */,
 			);
 			path = Services;
 			sourceTree = "<group>";
@@ -85,6 +98,7 @@
 			isa = PBXGroup;
 			children = (
 				3C659C61F91D03DC0761F4EC /* BlabberApp.swift */,
+				8058106BD8706B7E40213633 /* Notifications.swift */,
 			);
 			path = App;
 			sourceTree = "<group>";
@@ -114,6 +128,7 @@
 		FAAEC14B7899AD7C266ECA67 /* Views */ = {
 			isa = PBXGroup;
 			children = (
+				81FB03371043B15361873413 /* CameraPreviewView.swift */,
 				2D457159A98CDF275EB90764 /* ContentView.swift */,
 				698BA54A81F64592F504D067 /* MeshBackground.swift */,
 				4BB826915BC380F4681DDF41 /* PlayerView.swift */,
@@ -152,10 +167,9 @@
 			isa = PBXProject;
 			attributes = {
 				BuildIndependentTargetsInParallel = YES;
-				LastUpgradeCheck = 1600;
+				LastUpgradeCheck = 2650;
 				TargetAttributes = {
 					D7DE9A3712E541773FBF4DA5 = {
-						DevelopmentTeam = 3T83K465T6;
 						ProvisioningStyle = Automatic;
 					};
 				};
@@ -197,17 +211,22 @@
 			files = (
 				87936C387CCDF5A664452C88 /* AudioService.swift in Sources */,
 				C1E3336E8BBA33B390FC2360 /* BlabberApp.swift in Sources */,
+				F9B5ACCD877E968E90D8D37F /* CameraPreviewView.swift in Sources */,
 				3BD11881E80367D25DAAD756 /* ContentView.swift in Sources */,
 				43436889C772501E5F846C6D /* LocationService.swift in Sources */,
 				5507792B3335B38C31CE3343 /* MeshBackground.swift in Sources */,
+				2B8A846E02B186A6394BBA7F /* Notifications.swift in Sources */,
 				B9CD70530EED6FFA62024F82 /* PlayerView.swift in Sources */,
 				7AD05CA2867DD9D76987E840 /* PlayerViewModel.swift in Sources */,
+				B747A95456B27F4B97CA89A8 /* ProcessingTracker.swift in Sources */,
 				BC86A00E3BD68FE66CD28A19 /* RecordView.swift in Sources */,
 				4622B63870D036BB5666B8EB /* RecorderViewModel.swift in Sources */,
 				997DCC50B8BAEED17041E62B /* Recording.swift in Sources */,
 				76E56001E09FDA3789AFD3AB /* RecordingState.swift in Sources */,
 				1610E383489462114F2E6914 /* RecordingsListView.swift in Sources */,
+				367CDEAE4F534E0158393A94 /* SpeakingSegment.swift in Sources */,
 				E57A033BA0CED7B23D4BC15E /* StorageService.swift in Sources */,
+				F5A15592B5C90D5D69A279EB /* VideoService.swift in Sources */,
 				566304E04DFC5D08D032D7A1 /* WaveformView.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -250,8 +269,10 @@
 				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
 				COPY_PHASE_STRIP = NO;
 				DEBUG_INFORMATION_FORMAT = dwarf;
+				DEVELOPMENT_TEAM = V5TV2ZP49S;
 				ENABLE_STRICT_OBJC_MSGSEND = YES;
 				ENABLE_TESTABILITY = YES;
+				ENABLE_USER_SCRIPT_SANDBOXING = YES;
 				GCC_C_LANGUAGE_STANDARD = gnu11;
 				GCC_DYNAMIC_NO_PIC = NO;
 				GCC_NO_COMMON_BLOCKS = YES;
@@ -272,6 +293,7 @@
 				ONLY_ACTIVE_ARCH = YES;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SDKROOT = iphoneos;
+				STRING_CATALOG_GENERATE_SYMBOLS = YES;
 				SWIFT_ACTIVE_COMPILATION_CONDITIONS = DEBUG;
 				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
 				SWIFT_VERSION = 5.0;
@@ -285,7 +307,6 @@
 				CODE_SIGN_IDENTITY = "iPhone Developer";
 				CODE_SIGN_STYLE = Automatic;
 				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
-				DEVELOPMENT_TEAM = 3T83K465T6;
 				ENABLE_BITCODE = NO;
 				INFOPLIST_FILE = Blabber/Info.plist;
 				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
@@ -310,7 +331,6 @@
 				CODE_SIGN_IDENTITY = "iPhone Developer";
 				CODE_SIGN_STYLE = Automatic;
 				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
-				DEVELOPMENT_TEAM = 3T83K465T6;
 				ENABLE_BITCODE = NO;
 				INFOPLIST_FILE = Blabber/Info.plist;
 				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
@@ -363,8 +383,10 @@
 				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
 				COPY_PHASE_STRIP = NO;
 				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				DEVELOPMENT_TEAM = V5TV2ZP49S;
 				ENABLE_NS_ASSERTIONS = NO;
 				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_USER_SCRIPT_SANDBOXING = YES;
 				GCC_C_LANGUAGE_STANDARD = gnu11;
 				GCC_NO_COMMON_BLOCKS = YES;
 				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
@@ -378,6 +400,7 @@
 				MTL_FAST_MATH = YES;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SDKROOT = iphoneos;
+				STRING_CATALOG_GENERATE_SYMBOLS = YES;
 				SWIFT_COMPILATION_MODE = wholemodule;
 				SWIFT_OPTIMIZATION_LEVEL = "-O";
 				SWIFT_VERSION = 5.0;

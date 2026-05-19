@@ -11,6 +11,7 @@ final class RecorderViewModel: ObservableObject {
     @Published var sensitivityThreshold: Float = -45.0
 
     private let audioService = AudioService.shared
+    private let videoService = VideoService.shared
     private let locationService = LocationService.shared
     private let storageService = StorageService.shared
 
@@ -43,6 +44,8 @@ final class RecorderViewModel: ObservableObject {
             }
             .store(in: &cancellables)
         audioService.vadConfig.speechThresholdDB = sensitivityThreshold
+
+        Task { await videoService.checkAndRequestAuthorization() }
     }
 
     // MARK: - Actions
@@ -64,6 +67,11 @@ final class RecorderViewModel: ObservableObject {
             try audioService.startSession(outputURL: url)
         } catch {
             errorMessage = error.localizedDescription
+            return
+        }
+
+        if videoService.cameraAuthorized {
+            videoService.startSession(tempURL: storageService.newTempVideoURL())
         }
     }
 
@@ -81,40 +89,73 @@ final class RecorderViewModel: ObservableObject {
     func endSession() {
         guard let id = currentRecordingID, let tempURL = currentTempURL else { return }
 
-        let duration = audioService.endSession()
+        let (duration, segments) = audioService.endSession()
+        let sessionStart = sessionStartDate ?? Date()
+        let sampleRate = audioService.recordingSampleRate
 
         guard duration > 0.5 else {
             try? FileManager.default.removeItem(at: tempURL)
+            videoService.cancelSession()
             currentRecordingID = nil
             currentTempURL = nil
             return
         }
 
-        let finalURL = storageService.finalAudioURL(for: id)
+        let finalAudioURL = storageService.finalAudioURL(for: id)
         do {
-            if FileManager.default.fileExists(atPath: finalURL.path) {
-                try FileManager.default.removeItem(at: finalURL)
+            if FileManager.default.fileExists(atPath: finalAudioURL.path) {
+                try FileManager.default.removeItem(at: finalAudioURL)
             }
-            try FileManager.default.moveItem(at: tempURL, to: finalURL)
+            try FileManager.default.moveItem(at: tempURL, to: finalAudioURL)
         } catch {
             errorMessage = "Failed to save: \(error.localizedDescription)"
+            videoService.cancelSession()
             return
         }
 
+        let needsProcessing = videoService.cameraAuthorized
         let recording = Recording(
             id: id,
             title: sessionTitle,
-            date: sessionStartDate ?? Date(),
+            date: sessionStart,
             duration: duration,
-            filename: "rec-\(id.uuidString).m4a"
+            filename: "rec-\(id.uuidString).m4a",
+            hasVideo: false,
+            isProcessing: needsProcessing
         )
         storageService.addRecording(recording)
+
         currentRecordingID = nil
         currentTempURL = nil
+
+        guard needsProcessing else { return }
+        let finalVideoURL = storageService.finalVideoURL(for: id)
+
+        Task {
+            guard let tempVideoURL = await videoService.stopSession() else {
+                storageService.updateRecordingProcessingDone(id: id)
+                return
+            }
+            do {
+                try await videoService.processAndSave(
+                    tempVideoURL: tempVideoURL,
+                    audioURL: finalAudioURL,
+                    segments: segments,
+                    sessionStart: sessionStart,
+                    sampleRate: sampleRate,
+                    outputURL: finalVideoURL
+                )
+                storageService.updateRecordingHasVideo(id: id)
+            } catch {
+                errorMessage = "Video processing failed: \(error.localizedDescription)"
+            }
+            storageService.updateRecordingProcessingDone(id: id)
+        }
     }
 
     func cancelSession() {
         audioService.cancelSession()
+        videoService.cancelSession()
         currentRecordingID = nil
         currentTempURL = nil
     }

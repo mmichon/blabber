@@ -1,76 +1,92 @@
 import Foundation
 import AVFoundation
+import Combine
 
 @MainActor
 final class PlayerViewModel: ObservableObject {
     @Published var isPlaying = false
     @Published var currentTime: TimeInterval = 0
     @Published var duration: TimeInterval = 0
+    @Published var hasVideo = false
     @Published var errorMessage: String?
 
-    private var player: AVAudioPlayer?
-    private var displayTimer: Timer?
+    private(set) var player: AVPlayer?
+    private var timeObserver: Any?
+    private var endObserver: Any?
 
     func load(_ recording: Recording) {
         stop()
         do {
             try AVAudioSession.sharedInstance().setCategory(.playback)
             try AVAudioSession.sharedInstance().setActive(true)
-            player = try AVAudioPlayer(contentsOf: recording.fileURL)
-            player?.prepareToPlay()
-            duration = player?.duration ?? 0
-            currentTime = 0
         } catch {
-            errorMessage = "Cannot play: \(error.localizedDescription)"
+            errorMessage = "Cannot activate audio session: \(error.localizedDescription)"
+            return
+        }
+
+        // Check disk directly — recording.hasVideo may be stale if video finished
+        // processing after the list snapshot was taken.
+        let videoExists = FileManager.default.fileExists(atPath: recording.videoFileURL.path)
+        hasVideo = videoExists
+        let url = videoExists ? recording.videoFileURL : recording.fileURL
+        let item = AVPlayerItem(url: url)
+        let avPlayer = AVPlayer(playerItem: item)
+        player = avPlayer
+
+        timeObserver = avPlayer.addPeriodicTimeObserver(
+            forInterval: CMTime(seconds: 0.1, preferredTimescale: 600),
+            queue: .main
+        ) { [weak self] time in
+            self?.currentTime = time.seconds
+        }
+
+        endObserver = NotificationCenter.default.addObserver(
+            forName: .AVPlayerItemDidPlayToEndTime,
+            object: item,
+            queue: .main
+        ) { [weak self] _ in
+            self?.isPlaying = false
+        }
+
+        Task {
+            let d = try? await item.asset.load(.duration)
+            duration = d.map { CMTimeGetSeconds($0) } ?? 0
         }
     }
 
     func togglePlayPause() {
         guard let player else { return }
-        if player.isPlaying {
+        if isPlaying {
             player.pause()
             isPlaying = false
-            stopTimer()
         } else {
+            if currentTime >= duration - 0.1 {
+                player.seek(to: .zero)
+            }
             player.play()
             isPlaying = true
-            startTimer()
         }
     }
 
     func seek(to time: TimeInterval) {
-        player?.currentTime = time
+        player?.seek(to: CMTimeMakeWithSeconds(time, preferredTimescale: 600))
         currentTime = time
     }
 
     func stop() {
-        player?.stop()
+        player?.pause()
+        if let obs = timeObserver { player?.removeTimeObserver(obs) }
+        if let obs = endObserver { NotificationCenter.default.removeObserver(obs) }
+        timeObserver = nil
+        endObserver = nil
         player = nil
         isPlaying = false
-        stopTimer()
         try? AVAudioSession.sharedInstance().setActive(false,
                                                        options: .notifyOthersOnDeactivation)
     }
 
-    private func startTimer() {
-        displayTimer = Timer.scheduledTimer(withTimeInterval: 0.1, repeats: true) { [weak self] _ in
-            Task { @MainActor [weak self] in
-                guard let self, let p = self.player else { return }
-                self.currentTime = p.currentTime
-                if !p.isPlaying {
-                    self.isPlaying = false
-                    self.stopTimer()
-                }
-            }
-        }
-    }
-
-    private func stopTimer() {
-        displayTimer?.invalidate()
-        displayTimer = nil
-    }
-
     deinit {
-        displayTimer?.invalidate()
+        if let obs = timeObserver { player?.removeTimeObserver(obs) }
+        if let obs = endObserver { NotificationCenter.default.removeObserver(obs) }
     }
 }

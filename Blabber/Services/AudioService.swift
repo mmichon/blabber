@@ -56,7 +56,8 @@ final class AudioService: NSObject, ObservableObject {
     private nonisolated(unsafe) var speechConfidence: Float = 0.0
     private nonisolated(unsafe) var detectingStart: Date?
     private nonisolated(unsafe) var detectingSilenceStart: Date?
-    private var recordingSampleRate: Double = 44100.0
+    private nonisolated(unsafe) var speakingSegments: [SpeakingSegment] = []
+    var recordingSampleRate: Double = 44100.0
 
     // SoundAnalysis
     private var soundAnalyzer: SNAudioStreamAnalyzer?
@@ -107,13 +108,19 @@ final class AudioService: NSObject, ObservableObject {
         }
     }
 
-    func endSession() -> TimeInterval {
+    func endSession() -> (TimeInterval, [SpeakingSegment]) {
         engine.stop()
         inputNode.removeTap(onBus: 0)
 
         let sampleRate = recordingSampleRate
         let frames = writtenFrames
         audioFile = nil
+
+        if !speakingSegments.isEmpty && speakingSegments[speakingSegments.count - 1].end == nil {
+            speakingSegments[speakingSegments.count - 1].end = Date()
+            speakingSegments[speakingSegments.count - 1].audioEndFrame = frames
+        }
+        let segments = speakingSegments
 
         analysisQueue.sync { self.soundAnalyzer = nil }
         speechObserver = nil
@@ -125,7 +132,7 @@ final class AudioService: NSObject, ObservableObject {
 
         NotificationCenter.default.removeObserver(self)
 
-        return sampleRate > 0 ? Double(frames) / sampleRate : 0
+        return (sampleRate > 0 ? Double(frames) / sampleRate : 0, segments)
     }
 
     func cancelSession() {
@@ -265,6 +272,11 @@ final class AudioService: NSObject, ObservableObject {
 
             if confidence >= vadConfig.speechConfidenceThreshold {
                 updateThreadState(.speaking)
+                let prerollSec = recordingSampleRate > 0 ? Double(prerollAccumulatedFrames) / recordingSampleRate : 0
+                speakingSegments.append(SpeakingSegment(
+                    videoStart: Date(timeIntervalSinceNow: -prerollSec),
+                    audioStartFrame: writtenFrames
+                ))
                 flushPreroll()
                 lastSpeechTime = now
                 detectingStart = nil
@@ -288,6 +300,10 @@ final class AudioService: NSObject, ObservableObject {
                 lastSpeechTime = now
             } else {
                 if now.timeIntervalSince(lastSpeechTime) >= vadConfig.silenceDuration {
+                    if !speakingSegments.isEmpty && speakingSegments[speakingSegments.count - 1].end == nil {
+                        speakingSegments[speakingSegments.count - 1].end = now
+                        speakingSegments[speakingSegments.count - 1].audioEndFrame = writtenFrames
+                    }
                     updateThreadState(.listening)
                     prerollBuffer = []
                     prerollAccumulatedFrames = 0
@@ -366,6 +382,7 @@ final class AudioService: NSObject, ObservableObject {
         speechConfidence = 0.0
         detectingStart = nil
         detectingSilenceStart = nil
+        speakingSegments = []
     }
 
     // MARK: - Interruption / Route Change
