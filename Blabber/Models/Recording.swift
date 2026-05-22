@@ -10,14 +10,12 @@ struct Recording: Identifiable, Codable, Hashable {
     var isProcessing: Bool = false
 
     var fileURL: URL {
-        FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)[0]
-            .appendingPathComponent(filename)
+        StorageService.shared.mediaDirectory.appendingPathComponent(filename)
     }
 
     var videoFilename: String { "rec-\(id.uuidString).mp4" }
 
     var videoFileURL: URL {
-        FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)[0]
-            .appendingPathComponent(videoFilename)
+        StorageService.shared.mediaDirectory.appendingPathComponent(videoFilename)
     }
 }

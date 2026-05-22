@@ -1,5 +1,6 @@
 import AVFoundation
 import AVKit
+import Photos
 import SwiftUI
 
 private struct VideoPlayerLayerView: UIViewRepresentable {
@@ -26,6 +27,7 @@ struct PlayerView: View {
     let recording: Recording
     @StateObject private var vm = PlayerViewModel()
     @Environment(\.dismiss) private var dismiss
+    @State private var savedToPhotos: Bool = false
 
     var body: some View {
         GeometryReader { geo in
@@ -59,18 +61,30 @@ struct PlayerView: View {
     @ViewBuilder
     private func portraitLayout(geo: GeometryProxy) -> some View {
         VStack(spacing: 0) {
-            dragHandle
-                .padding(.top, 12)
+            ZStack {
+                dragHandle
+                if UIDevice.current.userInterfaceIdiom == .pad {
+                    HStack {
+                        Spacer()
+                        Button { dismiss() } label: {
+                            Image(systemName: "xmark.circle.fill")
+                                .font(.system(size: 28))
+                                .foregroundStyle(Color.white.opacity(0.4))
+                        }
+                        .padding(.trailing, 20)
+                    }
+                }
+            }
+            .padding(.top, 12)
 
             titleSection
-                .padding(.top, 20)
+                .padding(.top, 16)
                 .padding(.horizontal, 28)
 
-            Spacer()
-
             waveformDecor
-                .frame(maxHeight: geo.size.height * 0.38)
-                .padding(.vertical, 16)
+                .frame(maxHeight: geo.size.height * (UIDevice.current.userInterfaceIdiom == .pad ? 0.78 : 0.58))
+                .padding(.top, 16)
+                .padding(.horizontal, 16)
 
             Spacer(minLength: 0)
         }
@@ -161,24 +175,46 @@ struct PlayerView: View {
             .font(.system(size: 13, weight: .medium, design: .monospaced))
             .foregroundColor(.white.opacity(0.45))
 
-            // Play/Pause
-            Button { vm.togglePlayPause() } label: {
-                ZStack {
-                    Circle()
-                        .fill(
-                            LinearGradient(colors: [Color.blue, Color.blue.opacity(0.7)],
-                                           startPoint: .topLeading, endPoint: .bottomTrailing)
-                        )
-                        .frame(width: 76, height: 76)
-                        .shadow(color: .blue.opacity(0.55), radius: 22, x: 0, y: 6)
+            HStack(alignment: .center) {
+                // Share
+                let shareURL = vm.hasVideo ? recording.videoFileURL : recording.fileURL
+                ShareLink(item: shareURL, preview: SharePreview(recording.title)) {
+                    actionIcon("square.and.arrow.up")
+                }
 
-                    Image(systemName: vm.isPlaying ? "pause.fill" : "play.fill")
-                        .font(.system(size: 28, weight: .bold))
-                        .foregroundColor(.white)
-                        .offset(x: vm.isPlaying ? 0 : 3)
+                Spacer()
+
+                // Play/Pause
+                Button { vm.togglePlayPause() } label: {
+                    ZStack {
+                        Circle()
+                            .fill(
+                                LinearGradient(colors: [Color.blue, Color.blue.opacity(0.7)],
+                                               startPoint: .topLeading, endPoint: .bottomTrailing)
+                            )
+                            .frame(width: 76, height: 76)
+                            .shadow(color: .blue.opacity(0.55), radius: 22, x: 0, y: 6)
+
+                        Image(systemName: vm.isPlaying ? "pause.fill" : "play.fill")
+                            .font(.system(size: 28, weight: .bold))
+                            .foregroundColor(.white)
+                            .offset(x: vm.isPlaying ? 0 : 3)
+                    }
+                }
+                .buttonStyle(PressScaleStyle())
+
+                Spacer()
+
+                // Save to Photos (video only)
+                if vm.hasVideo {
+                    Button { saveToPhotos() } label: {
+                        actionIcon(savedToPhotos ? "checkmark" : "square.and.arrow.down")
+                            .foregroundColor(savedToPhotos ? .green : .white)
+                    }
+                } else {
+                    actionIcon("square.and.arrow.up").hidden()
                 }
             }
-            .buttonStyle(PressScaleStyle())
             .padding(.top, 6)
         }
         .padding(20)
@@ -187,6 +223,31 @@ struct PlayerView: View {
 
     private func timeString(_ t: TimeInterval) -> String {
         String(format: "%d:%02d", Int(t)/60, Int(t)%60)
+    }
+
+    private func actionIcon(_ name: String) -> some View {
+        ZStack {
+            Circle()
+                .fill(Color.white.opacity(0.10))
+                .frame(width: 48, height: 48)
+            Image(systemName: name)
+                .font(.system(size: 18, weight: .semibold))
+                .foregroundColor(.white)
+        }
+    }
+
+    private func saveToPhotos() {
+        let url = recording.videoFileURL
+        PHPhotoLibrary.requestAuthorization(for: .addOnly) { status in
+            guard status == .authorized else { return }
+            PHPhotoLibrary.shared().performChanges({
+                PHAssetChangeRequest.creationRequestForAssetFromVideo(atFileURL: url)
+            }) { success, _ in
+                if success {
+                    DispatchQueue.main.async { savedToPhotos = true }
+                }
+            }
+        }
     }
 }
 

@@ -26,6 +26,8 @@
 	<string>Blabber names each recording with where you were.</string>
 	<key>NSMicrophoneUsageDescription</key>
 	<string>Blabber needs the microphone to capture your car conversations.</string>
+	<key>NSPhotoLibraryAddUsageDescription</key>
+	<string>Blabber can save recordings to your Photos library.</string>
 	<key>UIBackgroundModes</key>
 	<array>
 		<string>audio</string>

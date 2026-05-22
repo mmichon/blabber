@@ -27,6 +27,7 @@ targets:
         NSCameraUsageDescription: "Blabber records video of conversations alongside audio."
         NSMicrophoneUsageDescription: "Blabber needs the microphone to capture your car conversations."
         NSLocationWhenInUseUsageDescription: "Blabber names each recording with where you were."
+        NSPhotoLibraryAddUsageDescription: "Blabber can save recordings to your Photos library."
         UIBackgroundModes:
           - audio
     settings:
@@ -36,6 +37,7 @@ targets:
         IPHONEOS_DEPLOYMENT_TARGET: "17.0"
         CODE_SIGN_STYLE: Automatic
         DEVELOPMENT_TEAM: 3T83K465T6
+        CODE_SIGN_ENTITLEMENTS: Blabber/Blabber.entitlements
         TARGETED_DEVICE_FAMILY: "1,2"
         ENABLE_BITCODE: NO
         DEBUG_INFORMATION_FORMAT: dwarf-with-dsym

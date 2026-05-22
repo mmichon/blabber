@@ -8,7 +8,7 @@ final class RecorderViewModel: ObservableObject {
     @Published var errorMessage: String?
     @Published var sessionTitle: String = "New Recording"
     @Published var hasSpeech: Bool = false
-    @Published var sensitivityThreshold: Float = -45.0
+    @Published var sensitivityThreshold: Float = UserDefaults.standard.object(forKey: "sensitivityThreshold") as? Float ?? -45.0
 
     private let audioService = AudioService.shared
     private let videoService = VideoService.shared
@@ -41,6 +41,7 @@ final class RecorderViewModel: ObservableObject {
         $sensitivityThreshold
             .sink { [weak self] value in
                 self?.audioService.vadConfig.speechThresholdDB = value
+                UserDefaults.standard.set(value, forKey: "sensitivityThreshold")
             }
             .store(in: &cancellables)
         audioService.vadConfig.speechThresholdDB = sensitivityThreshold

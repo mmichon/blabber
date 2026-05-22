@@ -3,6 +3,8 @@ import SwiftUI
 struct RecordingsListView: View {
     @State private var recordings: [Recording] = []
     @State private var selectedRecording: Recording?
+    @State private var downloadingIDs: Set<UUID> = []
+    @State private var pendingPlayRecording: Recording?
 
     private let storage = StorageService.shared
 
@@ -17,12 +19,13 @@ struct RecordingsListView: View {
                     List {
                         ForEach(recordings) { recording in
                             RecordingRow(recording: recording,
-                                         isProcessing: recording.isProcessing)
+                                         isProcessing: recording.isProcessing,
+                                         isDownloading: downloadingIDs.contains(recording.id),
+                                         isCloudOnly: !storage.isAvailableLocally(recording))
                                 .listRowBackground(Color.white.opacity(0.06))
                                 .listRowSeparatorTint(Color.white.opacity(0.08))
                                 .onTapGesture {
-                                    guard !recording.isProcessing else { return }
-                                    selectedRecording = recording
+                                    handleTap(recording)
                                 }
                         }
                         .onDelete { indexSet in
@@ -40,14 +43,39 @@ struct RecordingsListView: View {
             .onAppear { recordings = storage.loadRecordings() }
             .onReceive(NotificationCenter.default.publisher(for: .recordingsDidChange)) { _ in
                 recordings = storage.loadRecordings()
+                if let pending = pendingPlayRecording, storage.isAvailableLocally(pending) {
+                    pendingPlayRecording = nil
+                    downloadingIDs.remove(pending.id)
+                    selectedRecording = pending
+                }
             }
-            .sheet(item: $selectedRecording) { recording in
+            .onReceive(NotificationCenter.default.publisher(for: .recordingDownloadRequested)) { note in
+                if let id = note.object as? UUID {
+                    downloadingIDs.insert(id)
+                }
+            }
+            .sheet(item: UIDevice.current.userInterfaceIdiom != .pad ? $selectedRecording : Binding<Recording?>.constant(nil)) { recording in
                 PlayerView(recording: recording)
                     .presentationDetents([.large])
                     .presentationDragIndicator(.visible)
             }
+            .fullScreenCover(item: UIDevice.current.userInterfaceIdiom == .pad ? $selectedRecording : Binding<Recording?>.constant(nil)) { recording in
+                PlayerView(recording: recording)
+            }
         }
         .preferredColorScheme(.dark)
+    }
+
+    private func handleTap(_ recording: Recording) {
+        guard !recording.isProcessing else { return }
+
+        if storage.isAvailableLocally(recording) {
+            downloadingIDs.remove(recording.id)
+            selectedRecording = recording
+        } else if !downloadingIDs.contains(recording.id) {
+            storage.requestDownload(recording)
+            pendingPlayRecording = recording
+        }
     }
 
     private var emptyState: some View {
@@ -74,6 +102,8 @@ struct RecordingsListView: View {
 struct RecordingRow: View {
     let recording: Recording
     let isProcessing: Bool
+    let isDownloading: Bool
+    let isCloudOnly: Bool
 
     var body: some View {
         HStack(spacing: 14) {
@@ -105,23 +135,43 @@ struct RecordingRow: View {
 
             Spacer()
 
-            if isProcessing {
-                HStack(spacing: 6) {
-                    ProgressView()
-                        .progressViewStyle(.circular)
-                        .scaleEffect(0.7)
-                        .tint(.white.opacity(0.5))
-                    Text("Processing")
-                        .font(.system(size: 11))
-                        .foregroundColor(.white.opacity(0.4))
-                }
-            } else {
-                Image(systemName: "chevron.right")
-                    .font(.system(size: 12, weight: .semibold))
-                    .foregroundColor(.white.opacity(0.25))
-            }
+            trailingIndicator
         }
         .padding(.vertical, 8)
+        .contentShape(Rectangle())
+    }
+
+    @ViewBuilder
+    private var trailingIndicator: some View {
+        if isProcessing {
+            HStack(spacing: 6) {
+                ProgressView()
+                    .progressViewStyle(.circular)
+                    .scaleEffect(0.7)
+                    .tint(.white.opacity(0.5))
+                Text("Processing")
+                    .font(.system(size: 11))
+                    .foregroundColor(.white.opacity(0.4))
+            }
+        } else if isDownloading {
+            HStack(spacing: 6) {
+                ProgressView()
+                    .progressViewStyle(.circular)
+                    .scaleEffect(0.7)
+                    .tint(.white.opacity(0.5))
+                Text("Downloading")
+                    .font(.system(size: 11))
+                    .foregroundColor(.white.opacity(0.4))
+            }
+        } else if isCloudOnly {
+            Image(systemName: "icloud.and.arrow.down")
+                .font(.system(size: 16))
+                .foregroundColor(.white.opacity(0.4))
+        } else {
+            Image(systemName: "chevron.right")
+                .font(.system(size: 12, weight: .semibold))
+                .foregroundColor(.white.opacity(0.25))
+        }
     }
 
     private var durationString: String {

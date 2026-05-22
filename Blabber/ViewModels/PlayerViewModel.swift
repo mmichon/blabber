@@ -25,8 +25,9 @@ final class PlayerViewModel: ObservableObject {
         }
 
         // Check disk directly — recording.hasVideo may be stale if video finished
-        // processing after the list snapshot was taken.
-        let videoExists = FileManager.default.fileExists(atPath: recording.videoFileURL.path)
+        // processing after the list snapshot was taken. Also verify the file is
+        // fully downloaded and not just an iCloud placeholder.
+        let videoExists = StorageService.shared.isURLAvailableLocally(recording.videoFileURL)
         hasVideo = videoExists
         let url = videoExists ? recording.videoFileURL : recording.fileURL
         let item = AVPlayerItem(url: url)

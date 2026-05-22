@@ -102,8 +102,15 @@ final class VideoService: NSObject, ObservableObject {
         output.connection(with: .audio)?.isEnabled = false
 
         // Bake horizontal flip into the recorded file (front camera records unmirrored by default).
-        if let videoConn = output.connection(with: .video), videoConn.isVideoMirroringSupported {
-            videoConn.isVideoMirrored = true
+        if let videoConn = output.connection(with: .video) {
+            if videoConn.isVideoMirroringSupported {
+                videoConn.isVideoMirrored = true
+            }
+            // Anti-shake: use the most aggressive stabilization for bumpy environments.
+            if videoConn.isVideoStabilizationSupported {
+                videoConn.preferredVideoStabilizationMode = .cinematicExtended
+                appendLog("[VideoService] video stabilization set to cinematicExtended")
+            }
         }
 
         // 2x zoom via hardware sensor crop — set once here, persists for all recordings.

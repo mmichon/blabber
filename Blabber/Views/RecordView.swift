@@ -15,7 +15,7 @@ struct RecordView: View {
 
                 if geo.size.width > geo.size.height {
                     landscapeLayout(geo: geo)
-                    if vm.isActive && videoService.cameraAuthorized {
+                    if videoService.cameraAuthorized {
                         cameraPreviewPip(geo: geo)
                     }
                 } else {
@@ -49,21 +49,15 @@ struct RecordView: View {
             headerView
                 .padding(.top, geo.safeAreaInsets.top + 16)
 
-            WaveformView(
-                level: vm.audioLevel,
-                isActive: vm.state == .listening || vm.state == .detecting || vm.state == .speaking,
-                state: vm.state
-            )
-            .padding(.top, 20)
+            Spacer(minLength: 0)
+
+            bigStatusView
 
             Spacer(minLength: 0)
 
             VStack(spacing: 0) {
                 sensitivityRow
                     .padding(.horizontal, 28)
-
-                statusLabel
-                    .padding(.top, 20)
 
                 djButtonRow
                     .padding(.horizontal, 28)
@@ -81,20 +75,13 @@ struct RecordView: View {
             VStack(spacing: 12) {
                 headerView
                 Spacer()
+                bigStatusView
+                Spacer()
                 sensitivityRow
                     .padding(.horizontal, 8)
-                statusLabel
-                Spacer()
             }
-            .frame(maxWidth: geo.size.width * 0.38)
+            .frame(maxWidth: geo.size.width * 0.5)
             .padding(.leading, geo.safeAreaInsets.leading + 24)
-
-            WaveformView(
-                level: vm.audioLevel,
-                isActive: vm.state == .listening || vm.state == .detecting || vm.state == .speaking,
-                state: vm.state
-            )
-            .frame(maxWidth: .infinity)
 
             VStack(spacing: 20) {
                 Spacer()
@@ -131,7 +118,7 @@ struct RecordView: View {
 
     private var headerView: some View {
         let iconSize: CGFloat = 100
-        let showCamera = vm.isActive && videoService.cameraAuthorized
+        let showCamera = videoService.cameraAuthorized
 
         return VStack(spacing: 10) {
             ZStack {
@@ -170,21 +157,24 @@ struct RecordView: View {
         .animation(.easeInOut(duration: 0.3), value: vm.isActive)
     }
 
-    private var statusLabel: some View {
-        HStack(spacing: 6) {
-            Circle()
-                .fill(statusColor)
-                .frame(width: 6, height: 6)
-                .shadow(color: statusColor.opacity(0.8), radius: 4)
+    private var bigStatusView: some View {
+        let color = statusColor
+        return Text(statusDisplayText)
+            .font(.system(size: 54, weight: .black, design: .rounded))
+            .foregroundStyle(color)
+            .shadow(color: color.opacity(0.75), radius: 28, x: 0, y: 0)
+            .shadow(color: color.opacity(0.35), radius: 56, x: 0, y: 0)
+            .animation(.easeInOut(duration: 0.2), value: vm.state)
+    }
 
-            Text(vm.statusText)
-                .font(.system(size: 13, weight: .semibold))
-                .foregroundColor(statusColor)
+    private var statusDisplayText: String {
+        switch vm.state {
+        case .idle:      return "Ready"
+        case .listening: return "Listening"
+        case .detecting: return "Detecting"
+        case .speaking:  return "Recording"
+        case .paused:    return "Paused"
         }
-        .padding(.horizontal, 18)
-        .padding(.vertical, 8)
-        .glassCard(cornerRadius: 20)
-        .animation(.easeInOut, value: vm.state)
     }
 
     private var sensitivityRow: some View {
